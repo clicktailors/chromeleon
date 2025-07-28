@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Chromeleon - Development</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 20px;
+			font-family: system-ui, -apple-system, sans-serif;
+			background: #f5f5f5;
+		}
+		.dev-container {
+			max-width: 400px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+			overflow: hidden;
+		}
+		.dev-header {
+			background: #4f46e5;
+			color: white;
+			padding: 10px 20px;
+			font-size: 14px;
+			font-weight: 500;
+		}
+	</style>
+</head>
+<body>
+	<div class="dev-header">🔧 Development Mode - Popup Preview</div>
+	<div class="dev-container">
+		<div id="popup-root"></div>
+	</div>
+	<script type="module" src="/src/popup/popup.tsx"></script>
+	<script>
+		// Mock Chrome extension APIs for development
+		if (!window.chrome) {
+			window.chrome = {
+				storage: {
+					sync: {
+						get: (keys) => Promise.resolve({}),
+						set: (data) => Promise.resolve()
+					}
+				},
+				tabs: {
+					query: () => Promise.resolve([{ id: 1 }]),
+					sendMessage: () => Promise.resolve()
+				}
+			};
+		}
+	</script>
+</body>
+</html> 

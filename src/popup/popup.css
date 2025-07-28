@@ -1,0 +1,10 @@
+/* Popup-specific styles - Using DaisyUI components */
+@import '../index.css';
+
+/* Custom popup body styling to ensure proper sizing */
+body {
+	width: 400px;
+	min-height: 600px;
+	margin: 0;
+	padding: 0;
+} 

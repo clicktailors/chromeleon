@@ -1,0 +1,35 @@
+{
+	"name": "chromeleon",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"dev:popup": "vite dev.html",
+		"dev:extension": "vite build --watch",
+		"build": "tsc && vite build",
+		"preview": "vite preview",
+		"build:extension": "vite build",
+		"generate-icons": "node scripts/generate-icons.js"
+	},
+	"dependencies": {
+		"axios": "^1.6.0",
+		"framer-motion": "^10.16.4",
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0"
+	},
+	"devDependencies": {
+		"@crxjs/vite-plugin": "^2.0.3",
+		"@types/chrome": "^0.0.246",
+		"@types/react": "^18.2.37",
+		"@types/react-dom": "^18.2.15",
+		"@vitejs/plugin-react": "^4.1.1",
+		"autoprefixer": "^10.4.16",
+		"daisyui": "^5.0.46",
+		"postcss": "^8.4.31",
+		"sharp": "^0.34.2",
+		"tailwindcss": "^4.1.11",
+		"typescript": "^5.2.2",
+		"vite": "^4.5.0"
+	}
+}

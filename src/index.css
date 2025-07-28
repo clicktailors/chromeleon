@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+    themes: all;
+}
+
+@layer base {
+	* {
+		box-sizing: border-box;
+	}
+	
+	body {
+		margin: 0;
+		padding: 0;
+		font-family: system-ui, -apple-system, sans-serif;
+	}
+}
+
+@layer components {
+	.btn {
+		@apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+	}
+	
+	.btn-primary {
+		@apply bg-primary-600 text-white hover:bg-primary-700;
+	}
+	
+	.btn-secondary {
+		@apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+	}
+} 
