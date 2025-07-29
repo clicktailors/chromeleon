@@ -38,9 +38,7 @@ export class MessageHandler {
 				await this.handleUpdateTheme(message);
 				break;
 
-			case 'TOGGLE_OVERLAY':
-				await this.handleToggleOverlay(message);
-				break;
+			
 
 			case 'REPLACE_CONTENT':
 				await this.handleReplaceContent(message);
@@ -69,13 +67,7 @@ export class MessageHandler {
 		}
 	}
 
-	/**
-	 * Handle overlay toggle
-	 */
-	private async handleToggleOverlay(_message: ChromeleonMessage): Promise<void> {
-		// TODO: Implement overlay toggle
-		console.log('Overlay toggle requested - implementation pending');
-	}
+
 
 	/**
 	 * Handle content replacement (reader mode)

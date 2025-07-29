@@ -38,13 +38,11 @@ export function applyGentleTheme(daisyTheme: string): void {
  */
 function generateAggressiveCSS(): string {
 	return `
-		/* SELECTIVE RESET: Remove website styles but preserve content visibility */
+		/* SELECTIVE RESET: Remove website styles but preserve layout and scrolling */
 		
 		/* Reset visual styling but preserve essential layout properties */
 		* {
-			/* Reset spacing and decorative styles */
-			margin: 0 !important;
-			padding: 0 !important;
+			/* Reset decorative styles but preserve layout */
 			border: unset !important;
 			border-radius: unset !important;
 			box-shadow: unset !important;
@@ -56,7 +54,7 @@ function generateAggressiveCSS(): string {
 			background-color: unset !important;
 			background-image: unset !important;
 			
-			/* Don't reset: display, position, visibility, opacity, content */
+			/* DON'T reset: margin, padding, display, position, visibility, opacity, content */
 		}
 
 		/* Document structure with pure DaisyUI CSS variables */
@@ -69,10 +67,13 @@ function generateAggressiveCSS(): string {
 			font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
 			font-size: 1rem !important;
 			line-height: 1.6 !important;
-			padding: 1rem !important;
+			/* Preserve existing body padding/margin for layout */
 			/* Pure DaisyUI CSS variables - no fallbacks needed */
 			background-color: hsl(var(--b1)) !important;
 			color: hsl(var(--bc)) !important;
+			/* Ensure scrolling works */
+			overflow-x: auto !important;
+			overflow-y: auto !important;
 		}
 
 		/* Typography with DaisyUI theme colors */
@@ -190,6 +191,17 @@ function generateAggressiveCSS(): string {
 		/* Ensure interactive elements work */
 		button, a, input, select, textarea, [onclick], [role="button"] {
 			pointer-events: auto !important;
+		}
+
+		/* Preserve scrolling behavior */
+		html, body {
+			overflow-x: auto !important;
+			overflow-y: auto !important;
+		}
+
+		/* Ensure scrollable containers work */
+		[style*="overflow"], [class*="scroll"], [class*="overflow"] {
+			overflow: auto !important;
 		}
 	`;
 }

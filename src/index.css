@@ -1,9 +1,12 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* please do not change this daisyui plugin syntax*/
 @plugin "daisyui" {
-    themes: all;
-}
+	themes: all;
+  }
 
-@layer base {
+/* @layer base {
 	* {
 		box-sizing: border-box;
 	}
@@ -13,18 +16,4 @@
 		padding: 0;
 		font-family: system-ui, -apple-system, sans-serif;
 	}
-}
-
-@layer components {
-	.btn {
-		@apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
-	}
-	
-	.btn-primary {
-		@apply bg-primary-600 text-white hover:bg-primary-700;
-	}
-	
-	.btn-secondary {
-		@apply bg-gray-200 text-gray-800 hover:bg-gray-300;
-	}
-} 
+} */

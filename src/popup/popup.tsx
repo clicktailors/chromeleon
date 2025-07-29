@@ -12,7 +12,7 @@ const Popup: React.FC = () => {
 	const [isExtensionEnabled, setIsExtensionEnabled] = useState(true);
 	const [settings, setSettings] = useState<ThemeSettings>({
 		aggressiveMode: false,
-		daisyTheme: "dark",
+		daisyTheme: "retro",
 	});
 
 	useEffect(() => {
@@ -20,6 +20,15 @@ const Popup: React.FC = () => {
 		loadSettings();
 		loadExtensionState();
 	}, []);
+
+	// Apply theme to document when settings change
+	useEffect(() => {
+		console.log('Applying theme:', settings.daisyTheme);
+		// Apply theme to document.documentElement, html element, and body
+		document.documentElement.setAttribute('data-theme', settings.daisyTheme);
+		document.querySelector('html')?.setAttribute('data-theme', settings.daisyTheme);
+		document.body.setAttribute('data-theme', settings.daisyTheme);
+	}, [settings.daisyTheme]);
 
 	const loadExtensionState = async () => {
 		try {
@@ -38,19 +47,18 @@ const Popup: React.FC = () => {
 			// Save the state
 			await chrome.storage.sync.set({ extensionEnabled: newState });
 
-			// Send message to content script
-			const [tab] = await chrome.tabs.query({
-				active: true,
-				currentWindow: true,
-			});
-			if (tab.id) {
-				await chrome.tabs.sendMessage(tab.id, {
+			// Send message through background script
+			await chrome.runtime.sendMessage({
+				target: "content-script",
+				data: {
 					type: "TOGGLE_EXTENSION",
 					enabled: newState,
-				});
-			}
+				},
+			});
 		} catch (error) {
 			console.error("Failed to toggle extension:", error);
+			// Revert the state if there was an error
+			setIsExtensionEnabled(!newState);
 		}
 	};
 
@@ -67,25 +75,27 @@ const Popup: React.FC = () => {
 
 	const updateTheme = async (newSettings: Partial<ThemeSettings>) => {
 		const updatedSettings = { ...settings, ...newSettings };
+		const previousSettings = { ...settings };
+		
+		// Optimistically update the UI
 		setSettings(updatedSettings);
 
 		try {
 			// Save the complete updated settings to storage
 			await chrome.storage.sync.set({ themeSettings: updatedSettings });
 
-			// Send the COMPLETE settings to content script
-			const [tab] = await chrome.tabs.query({
-				active: true,
-				currentWindow: true,
-			});
-			if (tab.id) {
-				await chrome.tabs.sendMessage(tab.id, {
+			// Send the COMPLETE settings through background script
+			await chrome.runtime.sendMessage({
+				target: "content-script",
+				data: {
 					type: "UPDATE_THEME",
 					settings: updatedSettings, // Send complete settings, not just partial
-				});
-			}
+				},
+			});
 		} catch (error) {
 			console.error("Failed to update theme:", error);
+			// Revert the settings if there was an error
+			setSettings(previousSettings);
 		}
 	};
 
@@ -122,7 +132,17 @@ const Popup: React.FC = () => {
 	];
 
 	return (
-		<div className="w-96 min-h-[600px] bg-base-100" data-theme={settings.daisyTheme}>
+		<div 
+			className="w-full h-full transition-colors duration-300" 
+			data-theme={settings.daisyTheme}
+			style={{
+				backgroundColor: settings.daisyTheme === 'light' ? '#ffffff' : 
+								settings.daisyTheme === 'garden' ? '#f0f9ff' :
+								settings.daisyTheme === 'cyberpunk' ? '#1a1a1a' :
+								'#1f2937',
+				color: settings.daisyTheme === 'light' ? '#000000' : '#ffffff'
+			}}
+		>
 			{/* Force all DaisyUI themes to be included in build */}
 			<div className="hidden" data-theme="light"></div>
 			<div className="hidden" data-theme="dark"></div>
@@ -156,13 +176,14 @@ const Popup: React.FC = () => {
 			<motion.div
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
-				className="card bg-base-100 shadow-xl"
+				className="w-full h-full"
+				style={{ backgroundColor: 'var(--b1)' }}
 			>
 				{/* Header */}
 				<motion.div
 					initial={{ y: -20 }}
 					animate={{ y: 0 }}
-					className="card-body pb-4"
+					className="p-4 pb-4"
 				>
 					<div className="text-center">
 						<h1 className="card-title text-2xl justify-center text-base-content">
@@ -261,14 +282,25 @@ const Popup: React.FC = () => {
 								transition={{ delay: 0.3 }}
 								className="card bg-base-200 p-4"
 							>
-								<h4 className="font-medium text-base-content mb-2">Theme Preview</h4>
-								<div className="flex gap-2 items-center">
-									<div className="btn btn-primary btn-sm">Primary</div>
-									<div className="btn btn-secondary btn-sm">Secondary</div>
-									<div className="btn btn-accent btn-sm">Accent</div>
-								</div>
-								<div className="mt-2 text-sm text-base-content/70">
-									Current theme: <span className="font-medium">{settings.daisyTheme}</span>
+								<h4 className="font-medium text-base-content mb-3 flex items-center gap-2">
+									🎨 Live Preview
+									<span className="badge badge-primary badge-sm">{settings.daisyTheme}</span>
+								</h4>
+								<div className="space-y-3">
+									<div className="flex gap-2 items-center flex-wrap">
+										<div className="btn btn-primary btn-sm">Primary</div>
+										<div className="btn btn-secondary btn-sm">Secondary</div>
+										<div className="btn btn-accent btn-sm">Accent</div>
+									</div>
+									<div className="flex gap-2 items-center">
+										<div className="badge badge-primary">Badge</div>
+										<div className="badge badge-secondary">Badge</div>
+										<div className="badge badge-accent">Badge</div>
+									</div>
+									<div className="divider my-2"></div>
+									<div className="text-xs text-base-content/60">
+										The entire popup updates in real-time as you change themes!
+									</div>
 								</div>
 							</motion.div>
 						</div>

@@ -6,7 +6,7 @@ export interface ThemeSettings {
 // Removed ThemeColors interface - using pure DaisyUI CSS variables instead
 
 export interface ChromeleonMessage {
-	type: 'TOGGLE_EXTENSION' | 'UPDATE_THEME' | 'TOGGLE_OVERLAY' | 'REPLACE_CONTENT';
+	type: 'TOGGLE_EXTENSION' | 'UPDATE_THEME' | 'REPLACE_CONTENT';
 	enabled?: boolean;
 	settings?: ThemeSettings;
 }

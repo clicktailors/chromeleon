@@ -1,29 +1,32 @@
-// Minimal DaisyUI test injection
+import { Initialization } from './lifecycle/initialization';
+import { MessageHandler } from './lifecycle/messageHandler';
+import { ThemeManager } from './theming/themeManager';
 
-function injectTestButton() {
-	const theme = "cyberpunk";
-	const existing = document.getElementById("chromeleon-test-btn");
-	if (existing) existing.remove();
-
-	const wrapper = document.createElement("div");
-	wrapper.id = "chromeleon-test-btn";
-	wrapper.setAttribute("data-theme", theme);
-	wrapper.style.position = "fixed";
-	wrapper.style.top = "10px";
-	wrapper.style.right = "10px";
-	wrapper.style.zIndex = "99999";
-	wrapper.innerHTML = `<button class="btn btn-primary">Test</button>`;
-
-	document.body.appendChild(wrapper);
-}
-
-// Wait for <body> to exist, then inject
-function waitForBodyAndInject() {
-	if (document.body) {
-		injectTestButton();
-	} else {
-		setTimeout(waitForBodyAndInject, 50);
+// Initialize the extension
+async function initializeExtension() {
+	console.log('🚀 Chromeleon content script starting...');
+	
+	try {
+		// Create theme manager
+		const themeManager = ThemeManager.getInstance();
+		
+		// Create message handler
+		const messageHandler = new MessageHandler(themeManager);
+		
+		// Create initialization handler
+		const initialization = new Initialization(themeManager);
+		
+		// Initialize message handling first
+		messageHandler.initialize();
+		
+		// Start the extension
+		await initialization.start();
+		
+		console.log('✅ Chromeleon content script initialized successfully');
+	} catch (error) {
+		console.error('❌ Failed to initialize Chromeleon content script:', error);
 	}
 }
 
-waitForBodyAndInject(); 
+// Start initialization when script loads
+initializeExtension(); 

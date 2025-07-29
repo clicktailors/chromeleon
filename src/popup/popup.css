@@ -1,10 +1,38 @@
 /* Popup-specific styles - Using DaisyUI components */
 @import '../index.css';
 
-/* Custom popup body styling to ensure proper sizing */
-body {
-	width: 400px;
-	min-height: 600px;
+/* Reset all default browser styling for extension popup */
+* {
 	margin: 0;
 	padding: 0;
+	box-sizing: border-box;
+}
+
+/* Custom popup body styling to ensure proper sizing - ONLY for popup context */
+body:has(#popup-root) {
+	width: 400px;
+	min-height: 600px;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: none !important;
+	border-radius: 0 !important;
+	overflow: hidden;
+}
+
+/* Remove any default browser styling on html element - ONLY for popup context */
+html:has(#popup-root) {
+	margin: 0 !important;
+	padding: 0 !important;
+	border: none !important;
+	border-radius: 0 !important;
+}
+
+/* Ensure the popup root takes full space */
+#popup-root {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-radius: 0;
 } 

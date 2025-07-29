@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Chromeleon - Development Environment</title>
+	<link rel="stylesheet" href="/src/index.css">
+	<style>
+		body {
+			margin: 0;
+			padding: 20px;
+			font-family: system-ui, -apple-system, sans-serif;
+			background: #f5f5f5;
+		}
+		.dev-header {
+			background: #4f46e5;
+			color: white;
+			padding: 15px 20px;
+			font-size: 16px;
+			font-weight: 500;
+			margin-bottom: 20px;
+			border-radius: 8px;
+		}
+		.dev-grid {
+			display: grid;
+			grid-template-columns: 400px 1fr;
+			gap: 20px;
+			align-items: start;
+		}
+		.popup-container {
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+			overflow: hidden;
+			height: 600px;
+		}
+		.popup-header {
+			background: #f3f4f6;
+			padding: 10px 15px;
+			font-size: 14px;
+			font-weight: 500;
+			border-bottom: 1px solid #e5e7eb;
+		}
+		.sample-page {
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+			padding: 20px;
+			min-height: 600px;
+		}
+		.sample-header {
+			background: #f3f4f6;
+			padding: 10px 15px;
+			font-size: 14px;
+			font-weight: 500;
+			border-bottom: 1px solid #e5e7eb;
+			margin: -20px -20px 20px -20px;
+			border-radius: 8px 8px 0 0;
+		}
+		.sample-content {
+			display: grid;
+			gap: 20px;
+		}
+		.sample-section {
+			border: 1px solid #e5e7eb;
+			border-radius: 6px;
+			padding: 15px;
+		}
+		.sample-section h3 {
+			margin: 0 0 10px 0;
+			color: #374151;
+		}
+		.button-group {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+		.form-group {
+			margin-bottom: 15px;
+		}
+		.form-group label {
+			display: block;
+			margin-bottom: 5px;
+			font-weight: 500;
+		}
+		.form-group input, .form-group select, .form-group textarea {
+			width: 100%;
+			padding: 8px 12px;
+			border: 1px solid #d1d5db;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+		.badge-group {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+		.badge {
+			padding: 4px 8px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: 500;
+		}
+		.badge-primary { background: #3b82f6; color: white; }
+		.badge-secondary { background: #6b7280; color: white; }
+		.badge-success { background: #10b981; color: white; }
+		.badge-warning { background: #f59e0b; color: white; }
+		.badge-error { background: #ef4444; color: white; }
+	</style>
+</head>
+<body>
+	<div class="dev-header">
+		🔧 Chromeleon Development Environment - Live Preview & Testing
+	</div>
+	
+	<div class="dev-grid">
+		<!-- Popup Preview -->
+		<div class="popup-container">
+			<div class="popup-header">📱 Extension Popup Preview</div>
+			<div id="popup-root"></div>
+		</div>
+		
+		<!-- Sample Webpage -->
+		<div class="sample-page">
+			<div class="sample-header">🌐 Sample Webpage (Test Extension Theming)</div>
+			<div class="sample-content">
+				<div class="sample-section">
+					<h3>Buttons</h3>
+					<div class="button-group">
+						<button>Default Button</button>
+						<button style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Primary Button</button>
+						<button style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Success Button</button>
+						<button style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Warning Button</button>
+						<button style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Error Button</button>
+					</div>
+				</div>
+				
+				<div class="sample-section">
+					<h3>Form Elements</h3>
+					<div class="form-group">
+						<label>Text Input</label>
+						<input type="text" placeholder="Enter some text..." />
+					</div>
+					<div class="form-group">
+						<label>Select Dropdown</label>
+						<select>
+							<option>Option 1</option>
+							<option>Option 2</option>
+							<option>Option 3</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Textarea</label>
+						<textarea rows="3" placeholder="Enter a longer message..."></textarea>
+					</div>
+				</div>
+				
+				<div class="sample-section">
+					<h3>Badges & Tags</h3>
+					<div class="badge-group">
+						<span class="badge badge-primary">Primary</span>
+						<span class="badge badge-secondary">Secondary</span>
+						<span class="badge badge-success">Success</span>
+						<span class="badge badge-warning">Warning</span>
+						<span class="badge badge-error">Error</span>
+					</div>
+				</div>
+				
+				<div class="sample-section">
+					<h3>Typography</h3>
+					<h1>Heading 1</h1>
+					<h2>Heading 2</h2>
+					<h3>Heading 3</h3>
+					<p>This is a paragraph with some <strong>bold text</strong> and <em>italic text</em>. It demonstrates how the extension will affect typography on websites.</p>
+					<a href="#" style="color: #3b82f6; text-decoration: none;">This is a link</a>
+				</div>
+				
+				<div class="sample-section">
+					<h3>Navigation</h3>
+					<nav style="display: flex; gap: 20px; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+						<a href="#" style="color: #374151; text-decoration: none; font-weight: 500;">Home</a>
+						<a href="#" style="color: #374151; text-decoration: none; font-weight: 500;">About</a>
+						<a href="#" style="color: #374151; text-decoration: none; font-weight: 500;">Services</a>
+						<a href="#" style="color: #374151; text-decoration: none; font-weight: 500;">Contact</a>
+					</nav>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script type="module" src="/src/popup/popup.tsx"></script>
+	<script type="module" src="/src/dev-content.ts"></script>
+	<script>
+		// Mock Chrome extension APIs for development
+		if (!window.chrome) {
+			window.chrome = {
+				storage: {
+					sync: {
+						get: (keys) => {
+							console.log('Mock chrome.storage.sync.get:', keys);
+							// Return default values for development
+							const defaults = {
+								extensionEnabled: true,
+								themeSettings: {
+									aggressiveMode: false,
+									daisyTheme: 'dark'
+								}
+							};
+							return Promise.resolve(defaults);
+						},
+						set: (data) => {
+							console.log('Mock chrome.storage.sync.set:', data);
+							return Promise.resolve();
+						}
+					}
+				},
+				tabs: {
+					query: () => Promise.resolve([{ id: 1 }]),
+					sendMessage: () => Promise.resolve()
+				},
+				runtime: {
+					sendMessage: (message) => {
+						console.log('Mock chrome.runtime.sendMessage:', message);
+						
+						// Forward theme updates to the development content script
+						if (message.target === 'content-script' && message.data) {
+							if (message.data.type === 'UPDATE_THEME') {
+								window.postMessage({
+									type: 'DEV_THEME_UPDATE',
+									theme: message.data.settings.daisyTheme,
+									enabled: true
+								}, '*');
+							} else if (message.data.type === 'TOGGLE_EXTENSION') {
+								window.postMessage({
+									type: 'DEV_THEME_UPDATE',
+									theme: 'dark', // Default theme when toggling
+									enabled: message.data.enabled
+								}, '*');
+							}
+						}
+						
+						return Promise.resolve();
+					}
+				}
+			};
+		}
+		
+		// Add development info
+		console.log('🚀 Chromeleon Development Environment Loaded');
+		console.log('📱 Popup preview available on the left');
+		console.log('🌐 Sample webpage available on the right for testing theming');
+		console.log('🔧 Chrome APIs are mocked for development');
+	</script>
+</body>
+</html> 
