@@ -1,0 +1,15 @@
+---
+type: code
+globs:
+  - "src/components/**/*"
+description: >
+  UI implementation rules using Tailwind CSS and daisyUI with abstraction for future migration.
+alwaysApply: true
+---
+
+# UI Component Rules
+
+- All visual components should be written in React with JSX.
+- Use Tailwind CSS utility classes and daisyUI elements.
+- Do not use inline styles or dynamically injected CSS from JavaScript.
+- Any third-party UI should be abstracted behind reusable internal components.

@@ -1,0 +1,15 @@
+---
+type: code
+globs:
+  - "src/ai/**/*"
+  - "src/utils/ai.ts"
+description: >
+  Guidelines for working with AI services for content processing.
+alwaysApply: true
+---
+
+# AI Integration Rules
+
+- Cache processed site results locally when possible to avoid redundant AI calls.
+- Use embedding-based representations to enable reuse of past analysis.
+- Ensure any network/API call is non-blocking and does not delay the initial render.
