@@ -33,12 +33,12 @@ export function injectDaisyUICSS(): void {
 	
 	// Add load/error handlers for debugging
 	link.onload = () => {
-		console.log('✅ DaisyUI CSS loaded successfully');
+		console.log('✅ DaisyUI CSS loaded successfully from:', cssUrl);
 		validateCSSVariables();
 	};
 	
-	link.onerror = () => {
-		console.error('❌ Failed to load DaisyUI CSS');
+	link.onerror = (error) => {
+		console.error('❌ Failed to load DaisyUI CSS from:', cssUrl, error);
 	};
 	
 	document.head.appendChild(link);
@@ -120,9 +120,27 @@ function validateCSSVariables(): void {
 			const testEl = document.createElement('div');
 			document.body.appendChild(testEl);
 			const computedStyle = getComputedStyle(document.documentElement);
-			const b1Value = computedStyle.getPropertyValue('--b1');
-			const bcValue = computedStyle.getPropertyValue('--bc');
-			console.log('CSS Variables check - --b1:', b1Value, '--bc:', bcValue);
+			
+			// Check DaisyUI CSS variables
+			const baseValue = computedStyle.getPropertyValue('--color-base-100');
+			const contentValue = computedStyle.getPropertyValue('--color-base-content');
+			const primaryValue = computedStyle.getPropertyValue('--color-primary');
+			const primaryContentValue = computedStyle.getPropertyValue('--color-primary-content');
+			const dataTheme = document.documentElement.getAttribute('data-theme');
+			
+			console.log('🔍 CSS Variables validation:');
+			console.log('  data-theme:', dataTheme);
+			console.log('  --color-base-100 (background):', baseValue || 'NOT FOUND');
+			console.log('  --color-base-content (text color):', contentValue || 'NOT FOUND');
+			console.log('  --color-primary:', primaryValue || 'NOT FOUND');
+			console.log('  --color-primary-content:', primaryContentValue || 'NOT FOUND');
+			
+			if (!baseValue && !contentValue) {
+				console.error('❌ DaisyUI CSS variables not found! Theme switching will not work.');
+			} else {
+				console.log('✅ DaisyUI CSS variables found - theme switching should work');
+			}
+			
 			document.body.removeChild(testEl);
 		}
 	}, 100);

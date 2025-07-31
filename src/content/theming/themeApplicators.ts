@@ -69,8 +69,8 @@ function generateAggressiveCSS(): string {
 			line-height: 1.6 !important;
 			/* Preserve existing body padding/margin for layout */
 			/* Pure DaisyUI CSS variables - no fallbacks needed */
-			background-color: hsl(var(--b1)) !important;
-			color: hsl(var(--bc)) !important;
+			background-color: var(--color-base-100) !important;
+			color: var(--color-base-content) !important;
 			/* Ensure scrolling works */
 			overflow-x: auto !important;
 			overflow-y: auto !important;
@@ -81,7 +81,7 @@ function generateAggressiveCSS(): string {
 			font-weight: bold !important;
 			margin-bottom: 0.5em !important;
 			margin-top: 1em !important;
-			color: hsl(var(--bc)) !important;
+			color: var(--color-base-content) !important;
 		}
 
 		h1 { font-size: 2rem !important; }
@@ -94,7 +94,7 @@ function generateAggressiveCSS(): string {
 		p {
 			margin-bottom: 1em !important;
 			line-height: 1.6 !important;
-			color: hsl(var(--bc)) !important;
+			color: var(--color-base-content) !important;
 		}
 
 		/* Lists with proper spacing */
@@ -105,7 +105,7 @@ function generateAggressiveCSS(): string {
 
 		li {
 			margin-bottom: 0.25em !important;
-			color: hsl(var(--bc)) !important;
+			color: var(--color-base-content) !important;
 		}
 
 		/* Preserve list styles */
@@ -117,17 +117,17 @@ function generateAggressiveCSS(): string {
 			font-size: 1rem !important;
 			padding: 0.5rem !important;
 			margin: 0.25rem !important;
-			border: 1px solid hsl(var(--bc) / 0.2) !important;
+			border: 1px solid var(--color-base-300) !important;
 			border-radius: 0.5rem !important;
-			background-color: hsl(var(--b1)) !important;
-			color: hsl(var(--bc)) !important;
+			background-color: var(--color-base-100) !important;
+			color: var(--color-base-content) !important;
 		}
 
 		button {
 			cursor: pointer !important;
-			background-color: hsl(var(--p)) !important;
-			color: hsl(var(--pc)) !important;
-			border-color: hsl(var(--p)) !important;
+			background-color: var(--color-primary) !important;
+			color: var(--color-primary-content) !important;
+			border-color: var(--color-primary) !important;
 		}
 
 		button:hover {
@@ -138,7 +138,7 @@ function generateAggressiveCSS(): string {
 		a {
 			text-decoration: underline !important;
 			cursor: pointer !important;
-			color: hsl(var(--p)) !important;
+			color: var(--color-primary) !important;
 		}
 
 		a:hover {
@@ -150,19 +150,19 @@ function generateAggressiveCSS(): string {
 			border-collapse: collapse !important;
 			width: 100% !important;
 			margin: 1em 0 !important;
-			background-color: hsl(var(--b1)) !important;
+			background-color: var(--color-base-100) !important;
 		}
 
 		th, td {
 			padding: 0.5rem !important;
 			text-align: left !important;
-			border: 1px solid hsl(var(--bc) / 0.2) !important;
-			color: hsl(var(--bc)) !important;
+			border: 1px solid var(--color-base-300) !important;
+			color: var(--color-base-content) !important;
 		}
 
 		th {
 			font-weight: bold !important;
-			background-color: hsl(var(--b2)) !important;
+			background-color: var(--color-base-200) !important;
 		}
 
 		/* Media elements */
@@ -179,7 +179,7 @@ function generateAggressiveCSS(): string {
 		/* Apply DaisyUI theme colors to all text elements */
 		span, div, section, article, header, footer, main, nav, aside, 
 		li, blockquote, pre, code, small, strong, em, i, b, u, mark {
-			color: hsl(var(--bc)) !important;
+			color: var(--color-base-content) !important;
 		}
 
 		/* Ensure content visibility */
@@ -212,7 +212,42 @@ function generateAggressiveCSS(): string {
 function generateGentleCSS(): string {
 	return `
 		/* Gentle theming - preserve existing styles, just add DaisyUI */
-		/* DaisyUI will handle theming through data-theme attribute */
+		/* Apply basic DaisyUI theme colors to common elements */
+		
+		/* Apply DaisyUI theme colors to body and basic elements */
+		body {
+			background-color: var(--color-base-100) !important;
+			color: var(--color-base-content) !important;
+		}
+		
+		/* Style headings with theme colors */
+		h1, h2, h3, h4, h5, h6 {
+			color: var(--color-base-content) !important;
+		}
+		
+		/* Style links with primary color */
+		a {
+			color: var(--color-primary) !important;
+		}
+		
+		/* Style buttons with theme colors */
+		button:not([class*="btn"]) {
+			background-color: var(--color-primary) !important;
+			color: var(--color-primary-content) !important;
+			border: 1px solid var(--color-primary) !important;
+		}
+		
+		/* Style form elements */
+		input, textarea, select {
+			background-color: var(--color-base-100) !important;
+			color: var(--color-base-content) !important;
+			border: 1px solid var(--color-base-300) !important;
+		}
+		
+		/* Style paragraphs and text */
+		p, span, div {
+			color: var(--color-base-content) !important;
+		}
 	`;
 }
 
