@@ -1,0 +1,15 @@
+---
+type: code
+globs:
+  - "src/**/*"
+description: >
+  Ensure consistent architectural patterns for the Chromeleon extension, using React components and avoiding direct DOM mutation or inline CSS.
+alwaysApply: true
+---
+
+# Architecture Rules
+
+- Use React components to build UI instead of injecting HTML or CSS directly into the page.
+- Avoid inline styles; use Tailwind CSS and daisyUI classes through JSX.
+- Encapsulate logic and presentation cleanly using hooks and component layers.
+- Keep rendering and state logic separate from content scraping or AI inference layers.
