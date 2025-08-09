@@ -1,0 +1,10 @@
+---
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Style Rules
+
+- Use Tailwind CSS but remain agnostic to daisyUI or other specific utility libraries
+- Use single-tab indentation for consistency
+- Avoid mixing logic and presentation in the same component

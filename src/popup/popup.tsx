@@ -6,6 +6,7 @@ import "./popup.css";
 interface ThemeSettings {
 	aggressiveMode: boolean;
 	daisyTheme: string;
+	showTestPane: boolean;
 }
 
 const Popup: React.FC = () => {
@@ -13,6 +14,7 @@ const Popup: React.FC = () => {
 	const [settings, setSettings] = useState<ThemeSettings>({
 		aggressiveMode: false,
 		daisyTheme: "retro",
+		showTestPane: true,
 	});
 
 	useEffect(() => {
@@ -21,13 +23,9 @@ const Popup: React.FC = () => {
 		loadExtensionState();
 	}, []);
 
-	// Apply theme to document when settings change
+	// No global attribute mutation needed; scope theme to the root wrapper
 	useEffect(() => {
 		console.log('Applying theme:', settings.daisyTheme);
-		// Apply theme to document.documentElement, html element, and body
-		document.documentElement.setAttribute('data-theme', settings.daisyTheme);
-		document.querySelector('html')?.setAttribute('data-theme', settings.daisyTheme);
-		document.body.setAttribute('data-theme', settings.daisyTheme);
 	}, [settings.daisyTheme]);
 
 	const loadExtensionState = async () => {
@@ -133,15 +131,8 @@ const Popup: React.FC = () => {
 
 	return (
 		<div 
-			className="w-full h-full transition-colors duration-300" 
+			className="w-full h-full transition-colors duration-300 bg-base-200"
 			data-theme={settings.daisyTheme}
-			style={{
-				backgroundColor: settings.daisyTheme === 'light' ? '#ffffff' : 
-								settings.daisyTheme === 'garden' ? '#f0f9ff' :
-								settings.daisyTheme === 'cyberpunk' ? '#1a1a1a' :
-								'#1f2937',
-				color: settings.daisyTheme === 'light' ? '#000000' : '#ffffff'
-			}}
 		>
 			{/* Force all DaisyUI themes to be included in build */}
 			<div className="hidden" data-theme="light"></div>
@@ -177,19 +168,19 @@ const Popup: React.FC = () => {
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
 				className="w-full h-full"
-				style={{ backgroundColor: 'var(--b1)' }}
 			>
 				{/* Header */}
 				<motion.div
 					initial={{ y: -20 }}
 					animate={{ y: 0 }}
-					className="p-4 pb-4"
+					className="p-4 pb-4 bg-base-300"
 				>
 					<div className="text-center">
 						<h1 className="card-title text-2xl justify-center text-base-content">
-							🦎 Chromeleon
+							<span className="text-primary">Chromeleon</span>
 						</h1>
 						<p className="text-base-content/70 text-sm">Website Rethemer</p>
+						<p className="text-base-content/70 text-sm">{settings.daisyTheme}</p>
 					</div>
 				</motion.div>
 
@@ -227,7 +218,7 @@ const Popup: React.FC = () => {
 								className="form-control"
 							>
 								<h3 className="text-lg font-semibold mb-3 text-base-content flex items-center gap-2">
-									🌼 DaisyUI Theme
+									Theme
 								</h3>
 								<div className="form-control">
 									<label className="label">
@@ -244,6 +235,34 @@ const Popup: React.FC = () => {
 											</option>
 										))}
 									</select>
+								</div>
+							</motion.div>
+
+							{/* Test Pane Toggle */}
+							<motion.div
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.22 }}
+								className="form-control"
+							>
+								<h3 className="text-lg font-semibold mb-3 text-base-content flex items-center gap-2">
+									🧪 Test Pane
+								</h3>
+								<div className="form-control">
+									<label className="label cursor-pointer justify-start gap-3">
+										<input
+											type="checkbox"
+											checked={settings.showTestPane}
+											onChange={(e) => updateTheme({ showTestPane: e.target.checked })}
+											className="checkbox checkbox-primary"
+										/>
+										<div className="flex flex-col">
+											<span className="label-text font-medium">Show Chromeleon test pane</span>
+											<span className="label-text-alt text-base-content/60">
+												Helps verify theming; disable when it blocks site UI
+											</span>
+										</div>
+									</label>
 								</div>
 							</motion.div>
 

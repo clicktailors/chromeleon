@@ -228,7 +228,8 @@
 								window.postMessage({
 									type: 'DEV_THEME_UPDATE',
 									theme: message.data.settings.daisyTheme,
-									enabled: true
+									enabled: true,
+									showTestPane: message.data.settings.showTestPane
 								}, '*');
 							} else if (message.data.type === 'TOGGLE_EXTENSION') {
 								window.postMessage({

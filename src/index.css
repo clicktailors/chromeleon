@@ -1,10 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* please do not change this daisyui plugin syntax*/
-@plugin "daisyui" {
-	themes: all;
-  }
 
 /* @layer base {
 	* {

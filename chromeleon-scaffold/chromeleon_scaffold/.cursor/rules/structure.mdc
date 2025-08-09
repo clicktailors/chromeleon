@@ -1,0 +1,13 @@
+---
+globs: ["**"]
+alwaysApply: true
+---
+
+# Project Structure Rules
+
+- Enforce clear separation of layers:
+  - `background/`: Extension lifecycle and event management
+  - `content/`: Injected UI and DOM interaction logic
+  - `components/`: React UI components
+  - `utils/`: Shared utility logic, including AI interfacing
+- Avoid inline DOM manipulation outside React entry points

@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TODO: Keep UI utility-agnostic — avoid daisyUI-specific classes */

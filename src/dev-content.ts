@@ -1,6 +1,7 @@
 // Development content script for testing theming functionality
 class DevThemeManager {
 	private currentTheme = 'dark';
+	private showTestPane = true;
 	private isEnabled = true;
 
 	constructor() {
@@ -16,6 +17,7 @@ class DevThemeManager {
 			if (event.data.type === 'DEV_THEME_UPDATE') {
 				this.currentTheme = event.data.theme;
 				this.isEnabled = event.data.enabled;
+				this.showTestPane = event.data.showTestPane ?? true;
 				this.applyTheme();
 			}
 		});
@@ -31,7 +33,11 @@ class DevThemeManager {
 		document.documentElement.setAttribute('data-theme', this.currentTheme);
 		
 		// Add some visual feedback
-		this.addThemeIndicator();
+		if (this.showTestPane) {
+			this.addThemeIndicator();
+		} else {
+			this.removeThemeIndicator();
+		}
 		
 		console.log(`🎨 Applied theme: ${this.currentTheme}`);
 	}

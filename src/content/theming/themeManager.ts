@@ -15,7 +15,8 @@ export class ThemeManager {
 			isEnabled: true,
 			currentTheme: {
 				aggressiveMode: false,
-				daisyTheme: 'dark'
+				daisyTheme: 'dark',
+				showTestPane: true,
 			}
 		};
 	}
@@ -102,9 +103,9 @@ export class ThemeManager {
 
 		// Apply appropriate theme mode
 		if (this.state.currentTheme.aggressiveMode) {
-			applyAggressiveTheme(this.state.currentTheme.daisyTheme);
+			applyAggressiveTheme(this.state.currentTheme.daisyTheme, this.state.currentTheme.showTestPane);
 		} else {
-			applyGentleTheme(this.state.currentTheme.daisyTheme);
+			applyGentleTheme(this.state.currentTheme.daisyTheme, this.state.currentTheme.showTestPane);
 		}
 	}
 

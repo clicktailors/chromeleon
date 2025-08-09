@@ -1,6 +1,7 @@
 export interface ThemeSettings {
 	aggressiveMode: boolean;
 	daisyTheme: string;
+	showTestPane: boolean;
 }
 
 // Removed ThemeColors interface - using pure DaisyUI CSS variables instead

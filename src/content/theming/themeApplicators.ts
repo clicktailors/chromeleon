@@ -3,7 +3,7 @@ import { injectThemeCSS } from './cssInjector';
 /**
  * Apply aggressive theme that strips existing styles and rebuilds with DaisyUI
  */
-export function applyAggressiveTheme(daisyTheme: string): void {
+export function applyAggressiveTheme(daisyTheme: string, showTestPane: boolean): void {
 	console.log('🔥 Applying AGGRESSIVE theme');
 	
 	const cssContent = generateAggressiveCSS();
@@ -11,7 +11,9 @@ export function applyAggressiveTheme(daisyTheme: string): void {
 	injectThemeCSS(cssContent);
 	
 	// Add test component to verify DaisyUI theme switching
-	addTestComponent(daisyTheme);
+	if (showTestPane) {
+		addTestComponent(daisyTheme);
+	}
 	
 	console.log('Chromeleon aggressive theme applied with theme:', daisyTheme);
 	console.log('DaisyUI CSS variables will handle all theming');
@@ -20,7 +22,7 @@ export function applyAggressiveTheme(daisyTheme: string): void {
 /**
  * Apply gentle theme that preserves existing styles and adds DaisyUI
  */
-export function applyGentleTheme(daisyTheme: string): void {
+export function applyGentleTheme(daisyTheme: string, showTestPane: boolean): void {
 	console.log('🌙 Applying GENTLE theme');
 	
 	const cssContent = generateGentleCSS();
@@ -28,7 +30,9 @@ export function applyGentleTheme(daisyTheme: string): void {
 	injectThemeCSS(cssContent);
 	
 	// Add test component to verify DaisyUI theme switching
-	addTestComponent(daisyTheme);
+	if (showTestPane) {
+		addTestComponent(daisyTheme);
+	}
 	
 	console.log('Chromeleon gentle theme applied with DaisyUI theme:', daisyTheme);
 }

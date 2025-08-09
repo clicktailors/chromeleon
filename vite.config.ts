@@ -4,8 +4,9 @@ import { resolve } from 'path'
 import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs'
 import tailwindcss from 'tailwindcss'
 import autoprefixer from 'autoprefixer'
+import type { ConfigEnv } from 'vite'
 
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command }: ConfigEnv) => {
 	const isDev = command === 'serve';
 	
 	return {
