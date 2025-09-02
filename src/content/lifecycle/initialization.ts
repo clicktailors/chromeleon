@@ -1,4 +1,5 @@
 import { ThemeManager } from '../theming/themeManager';
+import type { ThemeSettings } from '../types';
 
 /**
  * Extension initialization utilities
@@ -18,11 +19,15 @@ export class Initialization {
 		console.log('Current URL:', window.location.href);
 		console.log('Document ready state:', document.readyState);
 
-		// Wait for head to exist before running extension
+		// Wait for head and body to exist before running extension
 		await this.waitForHead();
+		await this.waitForBody();
 		
 		// Initialize the extension
 		await this.initializeExtension();
+
+		// React to storage changes (backup signal to runtime messages)
+		this.setupStorageChangeListener();
 
 		// Set up DOM ready listener for late initialization if needed
 		this.setupDOMReadyListener();
@@ -53,11 +58,57 @@ export class Initialization {
 	}
 
 	/**
+	 * Wait for document.body to exist
+	 */
+	private async waitForBody(): Promise<void> {
+		if (document.body) {
+			console.log('✅ Body exists, extension ready');
+			return;
+		}
+
+		console.log('⏳ Waiting for document.body...');
+		return new Promise((resolve) => {
+			const checkBody = () => {
+				if (document.body) {
+					console.log('✅ Body exists, extension ready');
+					resolve();
+				} else {
+					setTimeout(checkBody, 10);
+				}
+			};
+			checkBody();
+		});
+	}
+
+	/**
 	 * Initialize the extension after DOM head is ready
 	 */
 	private async initializeExtension(): Promise<void> {
 		console.log('🚀 Initializing Chromeleon extension');
 		await this.themeManager.initialize();
+	}
+
+	/**
+	 * Listen for chrome.storage changes so content reacts to popup setting toggles
+	 */
+	private setupStorageChangeListener(): void {
+		chrome.storage.onChanged.addListener((changes, areaName) => {
+			if (areaName !== 'sync') return;
+
+			// Theme settings updated in popup
+			if (changes.themeSettings && changes.themeSettings.newValue) {
+				const newSettings = changes.themeSettings.newValue as ThemeSettings;
+				// Apply without waiting; failures are logged
+				void this.themeManager.updateTheme(newSettings);
+			}
+
+			// Extension enabled/disabled toggled in popup
+			if (Object.prototype.hasOwnProperty.call(changes, 'extensionEnabled')) {
+				const enabledChange = changes.extensionEnabled as { newValue: boolean };
+				const isEnabled = enabledChange?.newValue !== false;
+				void this.themeManager.toggleExtension(isEnabled);
+			}
+		});
 	}
 
 	/**

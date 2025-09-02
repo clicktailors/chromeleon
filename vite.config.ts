@@ -58,7 +58,7 @@ export default defineConfig(({ command }: ConfigEnv) => {
 				rollupOptions: {
 					input: {
 						popup: resolve(__dirname, 'src/popup/popup.html'),
-						content: resolve(__dirname, 'src/content/content.ts'),
+						content: resolve(__dirname, 'src/content/index.tsx'),
 						background: resolve(__dirname, 'src/background/background.ts'),
 					},
 					output: {

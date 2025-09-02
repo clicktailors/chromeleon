@@ -2,3 +2,9 @@
 /* This CSS is injected into web pages to retheme them */
 @import "../index.css";
 
+/* Scope basic overlay host to be non-intrusive */
+#chromeleon-root {
+	all: initial;
+	position: relative;
+}
+

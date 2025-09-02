@@ -3,19 +3,65 @@ import { createRoot } from "react-dom/client";
 import { motion } from "framer-motion";
 import "./popup.css";
 
+type ThemeMode = "system" | "light" | "dark";
+
 interface ThemeSettings {
-	aggressiveMode: boolean;
-	daisyTheme: string;
+	mode: ThemeMode;
+	selectedLightTheme: string;
+	selectedDarkTheme: string;
 	showTestPane: boolean;
 }
 
 const Popup: React.FC = () => {
 	const [isExtensionEnabled, setIsExtensionEnabled] = useState(true);
 	const [settings, setSettings] = useState<ThemeSettings>({
-		aggressiveMode: false,
-		daisyTheme: "retro",
+		mode: "system",
+		selectedLightTheme: "retro",
+		selectedDarkTheme: "dracula",
 		showTestPane: true,
 	});
+	const [isSystemDark, setIsSystemDark] = useState<boolean>(
+		window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false
+	);
+
+	const lightThemes = [
+		{ name: "Cupcake", value: "cupcake" },
+		{ name: "Bumblebee", value: "bumblebee" },
+		{ name: "Emerald", value: "emerald" },
+		{ name: "Corporate", value: "corporate" },
+		{ name: "Retro", value: "retro" },
+		{ name: "Cyberpunk", value: "cyberpunk" },
+		{ name: "Valentine", value: "valentine" },
+		{ name: "Halloween", value: "halloween" },
+		{ name: "Garden", value: "garden" },
+		{ name: "Forest", value: "forest" },
+		{ name: "Lofi", value: "lofi" },
+		{ name: "Pastel", value: "pastel" },
+		{ name: "Fantasy", value: "fantasy" },
+		{ name: "Wireframe", value: "wireframe" },
+		{ name: "CMYK", value: "cmyk" },
+		{ name: "Autumn", value: "autumn" },
+		{ name: "Business", value: "business" },
+		{ name: "Acid", value: "acid" },
+		{ name: "Lemonade", value: "lemonade" },
+		{ name: "Nord", value: "nord" },
+		{ name: "Winter", value: "winter" },
+	];
+
+	const darkThemes = [
+		{ name: "Dark", value: "dark" },
+		{ name: "Synthwave", value: "synthwave" },
+		{ name: "Black", value: "black" },
+		{ name: "Luxury", value: "luxury" },
+		{ name: "Dracula", value: "dracula" },
+		{ name: "Night", value: "night" },
+		{ name: "Coffee", value: "coffee" },
+		{ name: "Dim", value: "dim" },
+		{ name: "Sunset", value: "sunset" },
+	];
+
+	const lightSet = new Set(lightThemes.map((t) => t.value));
+	const darkSet = new Set(darkThemes.map((t) => t.value));
 
 	useEffect(() => {
 		// Load saved settings and extension state
@@ -23,10 +69,20 @@ const Popup: React.FC = () => {
 		loadExtensionState();
 	}, []);
 
-	// No global attribute mutation needed; scope theme to the root wrapper
 	useEffect(() => {
-		console.log('Applying theme:', settings.daisyTheme);
-	}, [settings.daisyTheme]);
+		const mql = window.matchMedia?.("(prefers-color-scheme: dark)");
+		const handler = () => setIsSystemDark(mql?.matches ?? false);
+		mql?.addEventListener?.("change", handler);
+		return () => mql?.removeEventListener?.("change", handler as any);
+	}, []);
+
+	const effectiveTheme = (() => {
+		if (settings.mode === "dark") return settings.selectedDarkTheme;
+		if (settings.mode === "light") return settings.selectedLightTheme;
+		return isSystemDark
+			? settings.selectedDarkTheme
+			: settings.selectedLightTheme;
+	})();
 
 	const loadExtensionState = async () => {
 		try {
@@ -37,15 +93,21 @@ const Popup: React.FC = () => {
 		}
 	};
 
+	const normalizeSettings = (st: ThemeSettings): ThemeSettings => {
+		const next = { ...st };
+		if (!lightSet.has(next.selectedLightTheme))
+			next.selectedLightTheme = "retro";
+		if (!darkSet.has(next.selectedDarkTheme))
+			next.selectedDarkTheme = "dark";
+		return next;
+	};
+
 	const toggleExtension = async () => {
 		const newState = !isExtensionEnabled;
 		setIsExtensionEnabled(newState);
 
 		try {
-			// Save the state
 			await chrome.storage.sync.set({ extensionEnabled: newState });
-
-			// Send message through background script
 			await chrome.runtime.sendMessage({
 				target: "content-script",
 				data: {
@@ -55,7 +117,6 @@ const Popup: React.FC = () => {
 			});
 		} catch (error) {
 			console.error("Failed to toggle extension:", error);
-			// Revert the state if there was an error
 			setIsExtensionEnabled(!newState);
 		}
 	};
@@ -64,7 +125,19 @@ const Popup: React.FC = () => {
 		try {
 			const result = await chrome.storage.sync.get("themeSettings");
 			if (result.themeSettings) {
-				setSettings(result.themeSettings);
+				const st = result.themeSettings as any;
+				if (st.daisyTheme) {
+					setSettings(
+						normalizeSettings({
+							mode: "system",
+							selectedLightTheme: st.daisyTheme,
+							selectedDarkTheme: st.daisyTheme,
+							showTestPane: st.showTestPane ?? true,
+						})
+					);
+				} else {
+					setSettings(normalizeSettings(st as ThemeSettings));
+				}
 			}
 		} catch (error) {
 			console.error("Failed to load settings:", error);
@@ -72,67 +145,42 @@ const Popup: React.FC = () => {
 	};
 
 	const updateTheme = async (newSettings: Partial<ThemeSettings>) => {
-		const updatedSettings = { ...settings, ...newSettings };
+		let updatedSettings = { ...settings, ...newSettings } as ThemeSettings;
+		// If mode changed, ensure current mode selection is valid
+		if (newSettings.mode) {
+			updatedSettings = normalizeSettings(updatedSettings);
+		}
 		const previousSettings = { ...settings };
-		
-		// Optimistically update the UI
 		setSettings(updatedSettings);
 
 		try {
-			// Save the complete updated settings to storage
 			await chrome.storage.sync.set({ themeSettings: updatedSettings });
-
-			// Send the COMPLETE settings through background script
 			await chrome.runtime.sendMessage({
 				target: "content-script",
 				data: {
 					type: "UPDATE_THEME",
-					settings: updatedSettings, // Send complete settings, not just partial
+					settings: updatedSettings,
 				},
 			});
 		} catch (error) {
 			console.error("Failed to update theme:", error);
-			// Revert the settings if there was an error
 			setSettings(previousSettings);
 		}
 	};
 
-	const daisyThemes = [
-		{ name: "Dark", value: "dark" },
-		{ name: "Light", value: "light" },
-		{ name: "Cupcake", value: "cupcake" },
-		{ name: "Bumblebee", value: "bumblebee" },
-		{ name: "Emerald", value: "emerald" },
-		{ name: "Corporate", value: "corporate" },
-		{ name: "Synthwave", value: "synthwave" },
-		{ name: "Retro", value: "retro" },
-		{ name: "Cyberpunk", value: "cyberpunk" },
-		{ name: "Valentine", value: "valentine" },
-		{ name: "Halloween", value: "halloween" },
-		{ name: "Garden", value: "garden" },
-		{ name: "Forest", value: "forest" },
-		{ name: "Aqua", value: "aqua" },
-		{ name: "Lofi", value: "lofi" },
-		{ name: "Pastel", value: "pastel" },
-		{ name: "Fantasy", value: "fantasy" },
-		{ name: "Wireframe", value: "wireframe" },
-		{ name: "Black", value: "black" },
-		{ name: "Luxury", value: "luxury" },
-		{ name: "Dracula", value: "dracula" },
-		{ name: "CMYK", value: "cmyk" },
-		{ name: "Autumn", value: "autumn" },
-		{ name: "Business", value: "business" },
-		{ name: "Acid", value: "acid" },
-		{ name: "Lemonade", value: "lemonade" },
-		{ name: "Night", value: "night" },
-		{ name: "Coffee", value: "coffee" },
-		{ name: "Winter", value: "winter" },
-	];
+	const activeList =
+		settings.mode === "dark" || (settings.mode === "system" && isSystemDark)
+			? darkThemes
+			: lightThemes;
+	const currentSelection =
+		settings.mode === "dark" || (settings.mode === "system" && isSystemDark)
+			? settings.selectedDarkTheme
+			: settings.selectedLightTheme;
 
 	return (
-		<div 
-			className="w-full h-full transition-colors duration-300 bg-base-200"
-			data-theme={settings.daisyTheme}
+		<div
+			className="w-full h-full transition-colors duration-300 bg-base-300 border-2 border-gray-500/30 overflow-hidden"
+			data-theme={effectiveTheme}
 		>
 			{/* Force all DaisyUI themes to be included in build */}
 			<div className="hidden" data-theme="light"></div>
@@ -177,10 +225,13 @@ const Popup: React.FC = () => {
 				>
 					<div className="text-center">
 						<h1 className="card-title text-2xl justify-center text-base-content">
-							<span className="text-primary">Chromeleon</span>
+							<span className="text-base-content">
+								Chromeleon
+							</span>
 						</h1>
-						<p className="text-base-content/70 text-sm">Website Rethemer</p>
-						<p className="text-base-content/70 text-sm">{settings.daisyTheme}</p>
+						<p className="text-base-content/70 text-sm">
+							Website Rethemer
+						</p>
 					</div>
 				</motion.div>
 
@@ -189,11 +240,13 @@ const Popup: React.FC = () => {
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					transition={{ delay: 0.05 }}
-					className="px-6 pb-4"
+					className="px-6 py-4"
 				>
 					<div className="form-control">
 						<label className="label cursor-pointer">
-							<span className="label-text font-medium">Enable Extension</span>
+							<span className="label-text font-medium">
+								Enable Extension
+							</span>
 							<input
 								type="checkbox"
 								checked={isExtensionEnabled}
@@ -209,7 +262,7 @@ const Popup: React.FC = () => {
 				{/* Content */}
 				<div className="card-body pt-4">
 					{isExtensionEnabled ? (
-						<div className="space-y-6">
+						<div className="">
 							{/* DaisyUI Theme Selection */}
 							<motion.div
 								initial={{ opacity: 0 }}
@@ -222,15 +275,56 @@ const Popup: React.FC = () => {
 								</h3>
 								<div className="form-control">
 									<label className="label">
-										<span className="label-text">Choose Theme</span>
+										<span className="label-text">Mode</span>
 									</label>
 									<select
-										value={settings.daisyTheme}
-										onChange={(e) => updateTheme({ daisyTheme: e.target.value })}
+										value={settings.mode}
+										onChange={(e) =>
+											updateTheme({
+												mode: e.target
+													.value as ThemeMode,
+											})
+										}
+										className="select select-bordered w-full mb-2"
+									>
+										<option value="system">
+											Match system
+										</option>
+										<option value="light">Light</option>
+										<option value="dark">Dark</option>
+									</select>
+
+									<label className="label">
+										<span className="label-text">
+											Theme
+										</span>
+									</label>
+									<select
+										value={currentSelection}
+										onChange={(e) => {
+											if (
+												settings.mode === "dark" ||
+												(settings.mode === "system" &&
+													isSystemDark)
+											) {
+												updateTheme({
+													selectedDarkTheme:
+														e.target.value,
+												});
+											} else {
+												updateTheme({
+													selectedLightTheme:
+														e.target.value,
+												});
+											}
+										}}
 										className="select select-bordered w-full"
 									>
-										{daisyThemes.map((theme) => (
-											<option key={theme.value} value={theme.value}>
+										{activeList.map((theme) => (
+											<option
+												key={theme.value}
+												value={theme.value}
+											>
 												{theme.name}
 											</option>
 										))}
@@ -246,48 +340,28 @@ const Popup: React.FC = () => {
 								className="form-control"
 							>
 								<h3 className="text-lg font-semibold mb-3 text-base-content flex items-center gap-2">
-									🧪 Test Pane
+									Test Pane
 								</h3>
 								<div className="form-control">
 									<label className="label cursor-pointer justify-start gap-3">
 										<input
 											type="checkbox"
 											checked={settings.showTestPane}
-											onChange={(e) => updateTheme({ showTestPane: e.target.checked })}
+											onChange={(e) =>
+												updateTheme({
+													showTestPane:
+														e.target.checked,
+												})
+											}
 											className="checkbox checkbox-primary"
 										/>
 										<div className="flex flex-col">
-											<span className="label-text font-medium">Show Chromeleon test pane</span>
-											<span className="label-text-alt text-base-content/60">
-												Helps verify theming; disable when it blocks site UI
+											<span className="label-text font-medium">
+												Show Chromeleon test pane
 											</span>
-										</div>
-									</label>
-								</div>
-							</motion.div>
-
-							{/* Aggressive Mode Toggle */}
-							<motion.div
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ delay: 0.2 }}
-								className="form-control"
-							>
-								<h3 className="text-lg font-semibold mb-3 text-base-content flex items-center gap-2">
-									⚡ Settings
-								</h3>
-								<div className="form-control">
-									<label className="label cursor-pointer justify-start gap-3">
-										<input
-											type="checkbox"
-											checked={settings.aggressiveMode}
-											onChange={(e) => updateTheme({ aggressiveMode: e.target.checked })}
-											className="checkbox checkbox-primary"
-										/>
-										<div className="flex flex-col">
-											<span className="label-text font-medium">🔥 Aggressive Mode</span>
 											<span className="label-text-alt text-base-content/60">
-												Strips all existing styles and applies DaisyUI
+												Helps verify theming; disable
+												when it blocks site UI
 											</span>
 										</div>
 									</label>
@@ -303,22 +377,32 @@ const Popup: React.FC = () => {
 							>
 								<h4 className="font-medium text-base-content mb-3 flex items-center gap-2">
 									🎨 Live Preview
-									<span className="badge badge-primary badge-sm">{settings.daisyTheme}</span>
+									<span className="badge badge-primary badge-sm">
+										{effectiveTheme}
+									</span>
 								</h4>
 								<div className="space-y-3">
 									<div className="flex gap-2 items-center flex-wrap">
-										<div className="btn btn-primary btn-sm">Primary</div>
-										<div className="btn btn-secondary btn-sm">Secondary</div>
-										<div className="btn btn-accent btn-sm">Accent</div>
+										<div className="btn btn-primary btn-sm">
+											Primary
+										</div>
+										<div className="btn btn-secondary btn-sm">
+											Secondary
+										</div>
+										<div className="btn btn-accent btn-sm">
+											Accent
+										</div>
 									</div>
 									<div className="flex gap-2 items-center">
-										<div className="badge badge-primary">Badge</div>
-										<div className="badge badge-secondary">Badge</div>
-										<div className="badge badge-accent">Badge</div>
-									</div>
-									<div className="divider my-2"></div>
-									<div className="text-xs text-base-content/60">
-										The entire popup updates in real-time as you change themes!
+										<div className="badge badge-primary">
+											Badge
+										</div>
+										<div className="badge badge-secondary">
+											Badge
+										</div>
+										<div className="badge badge-accent">
+											Badge
+										</div>
 									</div>
 								</div>
 							</motion.div>
@@ -334,7 +418,9 @@ const Popup: React.FC = () => {
 									Extension Disabled
 								</h3>
 								<p className="text-base-content/60 text-sm">
-									Toggle the switch above to enable Chromeleon and start customizing your browsing experience.
+									Toggle the switch above to enable Chromeleon
+									and start customizing your browsing
+									experience.
 								</p>
 							</div>
 						</motion.div>
@@ -346,7 +432,7 @@ const Popup: React.FC = () => {
 };
 
 // Initialize popup
-const container = document.getElementById("popup-root");
+const container = document.getElementById("root");
 if (container) {
 	const root = createRoot(container);
 	root.render(<Popup />);

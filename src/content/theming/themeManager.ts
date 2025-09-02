@@ -1,7 +1,8 @@
 import { injectDaisyUICSS, removeAllCSS, setDaisyUITheme, removeDaisyUITheme } from './cssInjector';
-import { applyAggressiveTheme, applyGentleTheme } from './themeApplicators';
+import { applyGentleTheme } from './themeApplicators';
 import { StorageManager } from '../storage/storageManager';
 import type { ThemeSettings, ExtensionState } from '../types';
+import { ensureOverlay } from '../ui/overlay';
 
 /**
  * Main theme management class that coordinates all theme operations
@@ -14,8 +15,9 @@ export class ThemeManager {
 		this.state = {
 			isEnabled: true,
 			currentTheme: {
-				aggressiveMode: false,
-				daisyTheme: 'dark',
+				mode: 'system',
+				selectedLightTheme: 'retro',
+				selectedDarkTheme: 'dracula',
 				showTestPane: true,
 			}
 		};
@@ -51,6 +53,18 @@ export class ThemeManager {
 		} else {
 			console.log('❌ Extension disabled');
 		}
+
+		// Listen for system color scheme changes when in system mode
+		try {
+			const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
+			if (mql) {
+				mql.addEventListener?.('change', () => {
+					if (this.state.currentTheme.mode === 'system' && this.state.isEnabled) {
+						void this.applyCurrentTheme();
+					}
+				});
+			}
+		} catch {}
 	}
 
 	/**
@@ -85,28 +99,34 @@ export class ThemeManager {
 	async applyCurrentTheme(): Promise<void> {
 		console.log('🎨 applyCurrentTheme() called');
 		console.log('Extension enabled:', this.state.isEnabled);
-		console.log('Aggressive mode:', this.state.currentTheme.aggressiveMode);
 
 		if (!this.state.isEnabled) {
 			console.log('❌ Extension disabled, skipping theme application');
 			return;
 		}
 
+		// Ensure overlay exists before applying theme or test UI
+		ensureOverlay();
+
 		// Remove existing theme if present
 		this.removeTheme();
 
-		// Inject DaisyUI CSS if needed
+		// Inject DaisyUI CSS if needed (no-op for head; overlay handles CSS)
 		injectDaisyUICSS();
 
-		// Set DaisyUI theme attribute
-		setDaisyUITheme(this.state.currentTheme.daisyTheme);
+		// Compute effective theme according to mode/system
+		const isSystemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
+		const effectiveTheme = this.state.currentTheme.mode === 'dark'
+			? this.state.currentTheme.selectedDarkTheme
+			: this.state.currentTheme.mode === 'light'
+				? this.state.currentTheme.selectedLightTheme
+				: (isSystemDark ? this.state.currentTheme.selectedDarkTheme : this.state.currentTheme.selectedLightTheme);
 
-		// Apply appropriate theme mode
-		if (this.state.currentTheme.aggressiveMode) {
-			applyAggressiveTheme(this.state.currentTheme.daisyTheme, this.state.currentTheme.showTestPane);
-		} else {
-			applyGentleTheme(this.state.currentTheme.daisyTheme, this.state.currentTheme.showTestPane);
-		}
+		// Set DaisyUI theme attribute on overlay host
+		setDaisyUITheme(effectiveTheme);
+
+		// Apply theme (single mode)
+		applyGentleTheme(effectiveTheme, this.state.currentTheme.showTestPane);
 	}
 
 	/**

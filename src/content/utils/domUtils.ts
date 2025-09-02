@@ -130,3 +130,20 @@ export function debounce<T extends (...args: any[]) => any>(
 		timeout = setTimeout(() => func(...args), wait);
 	};
 } 
+
+/**
+ * Ensure a shadow host exists and return its host and shadow root.
+ */
+export function ensureShadowHost(hostId: string): { host: HTMLElement; shadow: ShadowRoot } {
+	let host = document.getElementById(hostId) as HTMLElement | null;
+	if (!host) {
+		host = document.createElement('div');
+		host.id = hostId;
+		document.body.appendChild(host);
+	}
+	let shadow = (host as any).shadowRoot as ShadowRoot | null;
+	if (!shadow) {
+		shadow = host.attachShadow({ mode: 'open' });
+	}
+	return { host, shadow };
+}

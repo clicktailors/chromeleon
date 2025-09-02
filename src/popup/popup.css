@@ -8,10 +8,14 @@
 	box-sizing: border-box;
 }
 
-/* Custom popup body styling to ensure proper sizing - ONLY for popup context */
-body:has(#popup-root) {
-	width: 400px;
-	min-height: 600px;
+/* Make the popup page background transparent so inner content can have rounded corners */
+html, body {
+	background: transparent !important;
+}
+
+/* Custom popup body styling - ONLY for popup context */
+/* Width/height are set inline for zero-flicker; keep the rest here */
+body:has(#root) {
 	margin: 0 !important;
 	padding: 0 !important;
 	border: none !important;
@@ -20,7 +24,7 @@ body:has(#popup-root) {
 }
 
 /* Remove any default browser styling on html element - ONLY for popup context */
-html:has(#popup-root) {
+html:has(#root) {
 	margin: 0 !important;
 	padding: 0 !important;
 	border: none !important;
@@ -28,7 +32,7 @@ html:has(#popup-root) {
 }
 
 /* Ensure the popup root takes full space */
-#popup-root {
+#root {
 	width: 100%;
 	height: 100%;
 	margin: 0;

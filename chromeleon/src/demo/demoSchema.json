@@ -1,0 +1,19 @@
+{
+  "type": "page",
+  "children": [
+    {
+      "type": "card",
+      "title": "Welcome to Chromeleon",
+      "body": "This is a demo card rendered from a JSON schema."
+    },
+    {
+      "type": "table",
+      "headers": ["Name", "Role"],
+      "rows": [
+        ["Alice", "Developer"],
+        ["Bob", "Designer"],
+        ["Carol", "Product"]
+      ]
+    }
+  ]
+}

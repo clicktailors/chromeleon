@@ -1,6 +1,7 @@
 export interface ThemeSettings {
-	aggressiveMode: boolean;
-	daisyTheme: string;
+	mode: 'system' | 'light' | 'dark';
+	selectedLightTheme: string;
+	selectedDarkTheme: string;
 	showTestPane: boolean;
 }
 
