@@ -7,8 +7,11 @@
 		"dev": "vite",
 		"dev:popup": "vite dev.html",
 		"dev:full": "vite --port 3000 --host",
-		"dev:extension": "vite build --watch",
-		"build": "tsc && vite build",
+		"watch:main": "vite build --watch",
+		"watch:content": "vite build -c vite.content.config.ts --watch",
+		"dev:extension": "npm run build:content && sh -c 'npm run watch:main & npm run watch:content'",
+		"build": "tsc && vite build && vite build -c vite.content.config.ts",
+		"build:content": "npx vite build -c vite.content.config.ts",
 		"preview": "vite preview",
 		"build:extension": "vite build",
 		"generate-icons": "node scripts/generate-icons.js"

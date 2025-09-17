@@ -18,14 +18,32 @@ export const ChromeleonApp: React.FC = () => {
 		return () => observer.disconnect();
 	}, []);
 
+	// Load adapter from storage and react to changes made from the popup
+	useEffect(() => {
+		let isMounted = true;
+		chrome.storage.sync.get('uiAdapter').then((res) => {
+			const key = (res?.uiAdapter === 'shadcn' ? 'shadcn' : 'daisy') as 'daisy' | 'shadcn';
+			if (isMounted) setAdapterKey(key);
+		}).catch(() => {});
+
+		const handleChange: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (changes, areaName) => {
+			if (areaName !== 'sync') return;
+			if (changes.uiAdapter) {
+				const next = changes.uiAdapter.newValue === 'shadcn' ? 'shadcn' : 'daisy';
+				setAdapterKey(next);
+			}
+		};
+		chrome.storage.onChanged.addListener(handleChange);
+		return () => {
+			isMounted = false;
+			chrome.storage.onChanged.removeListener(handleChange);
+		};
+	}, []);
+
 	const adapter = adapterKey === 'daisy' ? daisyAdapter : shadcnAdapter;
 	return (
 		<UIProvider adapter={adapter}>
 			<div className="p-2">
-				<div className="mb-2 flex gap-2">
-					<button className={adapter.button.primary} onClick={() => setAdapterKey('daisy')}>Daisy</button>
-					<button className={adapter.button.secondary} onClick={() => setAdapterKey('shadcn')}>Shadcn</button>
-				</div>
 				<IRRenderer ir={ir} />
 			</div>
 		</UIProvider>

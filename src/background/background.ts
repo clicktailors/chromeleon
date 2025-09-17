@@ -1,4 +1,4 @@
-// Background service worker for Chromeleon extension
+// Background service worker for Chromeleon extension (ESM)
 console.log('Chromeleon background script loaded');
 
 // Basic background script functionality

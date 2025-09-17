@@ -64,6 +64,39 @@ export class MessageHandler {
 	private async handleUpdateTheme(message: ChromeleonMessage): Promise<void> {
 		if (message.settings) {
 			await this.themeManager.updateTheme(message.settings);
+			// Update overlay backdrop mode immediately when settings change
+			try {
+				const host = document.getElementById('chromeleon-root') as HTMLElement | null;
+				const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
+				const overlayEl = shadow?.getElementById('overlay');
+				if (overlayEl) {
+					const st: any = message.settings;
+					const mode = st.mode || 'system';
+					const lightTheme = st.selectedLightTheme || 'retro';
+					const darkTheme = st.selectedDarkTheme || 'dracula';
+					const isSystemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
+					const effective = mode === 'dark' ? darkTheme : mode === 'light' ? lightTheme : (isSystemDark ? darkTheme : lightTheme);
+					overlayEl.setAttribute('data-theme', effective);
+					// After theme is applied, toggle overlay mode and inline fallback styles
+					if (st.overlaySolidBackground) {
+						overlayEl.classList.add('solid');
+						const computed = getComputedStyle(overlayEl);
+						const baseColor = computed.getPropertyValue('--b1').trim();
+						if (baseColor) {
+							overlayEl.style.background = baseColor;
+							overlayEl.style.backgroundColor = baseColor;
+						}
+						overlayEl.style.backdropFilter = '' as any;
+						(overlayEl.style as any).webkitBackdropFilter = '';
+					} else {
+						overlayEl.classList.remove('solid');
+						overlayEl.style.backgroundColor = '';
+						overlayEl.style.background = 'rgba(0, 0, 0, 0.5)';
+						overlayEl.style.backdropFilter = 'blur(8px)';
+						(overlayEl.style as any).webkitBackdropFilter = 'blur(8px)';
+					}
+				}
+			} catch {}
 		}
 	}
 

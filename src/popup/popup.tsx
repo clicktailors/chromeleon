@@ -20,9 +20,13 @@ const Popup: React.FC = () => {
 		selectedDarkTheme: "dracula",
 		showTestPane: true,
 	});
+	const [overlaySolidBackground, setOverlaySolidBackground] = useState<boolean>(false);
 	const [isSystemDark, setIsSystemDark] = useState<boolean>(
 		window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false
 	);
+
+	// UI adapter selection (daisy | shadcn)
+	const [uiAdapter, setUiAdapter] = useState<'daisy' | 'shadcn'>('daisy');
 
 	const lightThemes = [
 		{ name: "Cupcake", value: "cupcake" },
@@ -67,6 +71,7 @@ const Popup: React.FC = () => {
 		// Load saved settings and extension state
 		loadSettings();
 		loadExtensionState();
+		loadUiAdapter();
 	}, []);
 
 	useEffect(() => {
@@ -138,6 +143,7 @@ const Popup: React.FC = () => {
 				} else {
 					setSettings(normalizeSettings(st as ThemeSettings));
 				}
+				setOverlaySolidBackground(Boolean(st.overlaySolidBackground));
 			}
 		} catch (error) {
 			console.error("Failed to load settings:", error);
@@ -154,17 +160,55 @@ const Popup: React.FC = () => {
 		setSettings(updatedSettings);
 
 		try {
-			await chrome.storage.sync.set({ themeSettings: updatedSettings });
+			await chrome.storage.sync.set({ themeSettings: { ...updatedSettings, overlaySolidBackground } });
 			await chrome.runtime.sendMessage({
 				target: "content-script",
 				data: {
 					type: "UPDATE_THEME",
-					settings: updatedSettings,
+					settings: { ...updatedSettings, overlaySolidBackground },
 				},
 			});
 		} catch (error) {
 			console.error("Failed to update theme:", error);
 			setSettings(previousSettings);
+		}
+	};
+
+	const updateOverlayBackground = async (solid: boolean) => {
+		setOverlaySolidBackground(solid);
+		try {
+			await chrome.storage.sync.set({ themeSettings: { ...settings, overlaySolidBackground: solid } });
+			await chrome.runtime.sendMessage({
+				target: 'content-script',
+				data: {
+					type: 'UPDATE_THEME',
+					settings: { ...settings, overlaySolidBackground: solid },
+				},
+			});
+		} catch (error) {
+			console.error('Failed to update overlay background mode:', error);
+		}
+	};
+
+	const loadUiAdapter = async () => {
+		try {
+			const result = await chrome.storage.sync.get('uiAdapter');
+			if (result.uiAdapter === 'shadcn' || result.uiAdapter === 'daisy') {
+				setUiAdapter(result.uiAdapter);
+			}
+		} catch (error) {
+			console.error('Failed to load UI adapter:', error);
+		}
+	};
+
+	const updateUiAdapter = async (value: 'daisy' | 'shadcn') => {
+		const prev = uiAdapter;
+		setUiAdapter(value);
+		try {
+			await chrome.storage.sync.set({ uiAdapter: value });
+		} catch (error) {
+			console.error('Failed to save UI adapter:', error);
+			setUiAdapter(prev);
 		}
 	};
 
@@ -263,6 +307,26 @@ const Popup: React.FC = () => {
 				<div className="card-body pt-4">
 					{isExtensionEnabled ? (
 						<div className="">
+							{/* UI Adapter Selection */}
+							<motion.div
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.08 }}
+								className="form-control"
+							>
+								<h3 className="text-lg font-semibold mb-3 text-base-content flex items-center gap-2">
+									UI Kit
+								</h3>
+								<select
+									value={uiAdapter}
+									onChange={(e) => updateUiAdapter((e.target.value === 'shadcn' ? 'shadcn' : 'daisy'))}
+									className="select select-bordered w-full mb-2"
+								>
+									<option value="daisy">DaisyUI</option>
+									<option value="shadcn">shadcn/ui</option>
+								</select>
+							</motion.div>
+
 							{/* DaisyUI Theme Selection */}
 							<motion.div
 								initial={{ opacity: 0 }}
@@ -330,6 +394,27 @@ const Popup: React.FC = () => {
 										))}
 									</select>
 								</div>
+							</motion.div>
+
+							{/* Overlay Background Mode */}
+							<motion.div
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.18 }}
+								className="form-control"
+							>
+								<h3 className="text-lg font-semibold mb-3 text-base-content flex items-center gap-2">
+									Overlay Style
+								</h3>
+								<label className="label cursor-pointer justify-start gap-3">
+									<input
+										type="checkbox"
+										checked={overlaySolidBackground}
+										onChange={(e) => updateOverlayBackground(e.target.checked)}
+										className="toggle toggle-primary"
+									/>
+									<span className="label-text">Use solid overlay background</span>
+								</label>
 							</motion.div>
 
 							{/* Test Pane Toggle */}

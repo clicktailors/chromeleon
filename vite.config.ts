@@ -58,10 +58,10 @@ export default defineConfig(({ command }: ConfigEnv) => {
 				rollupOptions: {
 					input: {
 						popup: resolve(__dirname, 'src/popup/popup.html'),
-						content: resolve(__dirname, 'src/content/index.tsx'),
 						background: resolve(__dirname, 'src/background/background.ts'),
 					},
 					output: {
+						// default format (es) for popup/background; content built separately
 						entryFileNames: (chunkInfo) => {
 							if (chunkInfo.name === 'popup') {
 								return 'popup.js'
