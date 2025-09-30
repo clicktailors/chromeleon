@@ -1,9 +1,11 @@
 ---
 type: code
 globs:
-  - "src/components/**/*"
+  - "src/**/*"
+  - "index.html"
+  - "*.html"
 description: >
-  UI implementation rules using Tailwind CSS and daisyUI with abstraction for future migration.
+  UI implementation rules using Tailwind CSS and daisyUI with strict no-inline-styles policy.
 alwaysApply: true
 ---
 
@@ -11,5 +13,10 @@ alwaysApply: true
 
 - All visual components should be written in React with JSX.
 - Use Tailwind CSS utility classes and daisyUI elements.
-- Do not use inline styles or dynamically injected CSS from JavaScript.
+- **NEVER use inline styles** (`style="..."` or `style={{...}}`).
+- **NEVER manipulate `.style` properties** in JavaScript/TypeScript.
+- **NEVER use `cssText`** for dynamic styling.
+- Use CSS classes and Tailwind utilities for all styling needs.
 - Any third-party UI should be abstracted behind reusable internal components.
+- For dynamic styling, use conditional class names or CSS custom properties.
+- Prefer DaisyUI component classes (`btn`, `input`, `card`, etc.) over custom styling.

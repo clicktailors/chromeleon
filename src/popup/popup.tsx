@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { motion } from "framer-motion";
 import "./popup.css";
+import { chromeStorage, chromeRuntime } from '@/utils/chromeApi';
+import { LIGHT_THEMES, DARK_THEMES, LIGHT_THEME_VALUES, DARK_THEME_VALUES } from '@/content/theming/themeDefinitions';
 
 type ThemeMode = "system" | "light" | "dark";
 
@@ -21,6 +23,7 @@ const Popup: React.FC = () => {
 		showTestPane: true,
 	});
 	const [overlaySolidBackground, setOverlaySolidBackground] = useState<boolean>(false);
+	const [useDemoSchema, setUseDemoSchema] = useState<boolean>(false);
 	const [isSystemDark, setIsSystemDark] = useState<boolean>(
 		window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false
 	);
@@ -28,44 +31,9 @@ const Popup: React.FC = () => {
 	// UI adapter selection (daisy | shadcn)
 	const [uiAdapter, setUiAdapter] = useState<'daisy' | 'shadcn'>('daisy');
 
-	const lightThemes = [
-		{ name: "Cupcake", value: "cupcake" },
-		{ name: "Bumblebee", value: "bumblebee" },
-		{ name: "Emerald", value: "emerald" },
-		{ name: "Corporate", value: "corporate" },
-		{ name: "Retro", value: "retro" },
-		{ name: "Cyberpunk", value: "cyberpunk" },
-		{ name: "Valentine", value: "valentine" },
-		{ name: "Halloween", value: "halloween" },
-		{ name: "Garden", value: "garden" },
-		{ name: "Forest", value: "forest" },
-		{ name: "Lofi", value: "lofi" },
-		{ name: "Pastel", value: "pastel" },
-		{ name: "Fantasy", value: "fantasy" },
-		{ name: "Wireframe", value: "wireframe" },
-		{ name: "CMYK", value: "cmyk" },
-		{ name: "Autumn", value: "autumn" },
-		{ name: "Business", value: "business" },
-		{ name: "Acid", value: "acid" },
-		{ name: "Lemonade", value: "lemonade" },
-		{ name: "Nord", value: "nord" },
-		{ name: "Winter", value: "winter" },
-	];
-
-	const darkThemes = [
-		{ name: "Dark", value: "dark" },
-		{ name: "Synthwave", value: "synthwave" },
-		{ name: "Black", value: "black" },
-		{ name: "Luxury", value: "luxury" },
-		{ name: "Dracula", value: "dracula" },
-		{ name: "Night", value: "night" },
-		{ name: "Coffee", value: "coffee" },
-		{ name: "Dim", value: "dim" },
-		{ name: "Sunset", value: "sunset" },
-	];
-
-	const lightSet = new Set(lightThemes.map((t) => t.value));
-	const darkSet = new Set(darkThemes.map((t) => t.value));
+	// Use centralized theme definitions
+	const lightSet = new Set(LIGHT_THEME_VALUES);
+	const darkSet = new Set(DARK_THEME_VALUES);
 
 	useEffect(() => {
 		// Load saved settings and extension state
@@ -90,11 +58,15 @@ const Popup: React.FC = () => {
 	})();
 
 	const loadExtensionState = async () => {
+		if (!chromeStorage?.sync?.get) {
+			console.warn('chrome.storage.sync.get is unavailable');
+			return;
+		}
 		try {
-			const result = await chrome.storage.sync.get("extensionEnabled");
-			setIsExtensionEnabled(result.extensionEnabled !== false); // Default to true
+			const result = await chromeStorage.sync.get('extensionEnabled') as { extensionEnabled?: boolean };
+			setIsExtensionEnabled(result?.extensionEnabled !== false);
 		} catch (error) {
-			console.error("Failed to load extension state:", error);
+			console.error('Failed to load extension state:', error);
 		}
 	};
 
@@ -111,74 +83,97 @@ const Popup: React.FC = () => {
 		const newState = !isExtensionEnabled;
 		setIsExtensionEnabled(newState);
 
+		if (!chromeStorage?.sync?.set || !chromeRuntime?.sendMessage) {
+			console.warn('chrome APIs unavailable to toggle extension');
+			return;
+		}
+
 		try {
-			await chrome.storage.sync.set({ extensionEnabled: newState });
-			await chrome.runtime.sendMessage({
-				target: "content-script",
+			await chromeStorage.sync.set({ extensionEnabled: newState });
+			await chromeRuntime.sendMessage({
+				target: 'content-script',
 				data: {
-					type: "TOGGLE_EXTENSION",
+					type: 'TOGGLE_EXTENSION',
 					enabled: newState,
 				},
 			});
 		} catch (error) {
-			console.error("Failed to toggle extension:", error);
+			console.error('Failed to toggle extension:', error);
 			setIsExtensionEnabled(!newState);
 		}
 	};
 
 	const loadSettings = async () => {
+		if (!chromeStorage?.sync?.get) {
+			console.warn('chrome.storage.sync.get is unavailable');
+			return;
+		}
 		try {
-			const result = await chrome.storage.sync.get("themeSettings");
+			const result = await chromeStorage.sync.get('themeSettings') as { themeSettings?: ThemeSettings & { daisyTheme?: string; overlaySolidBackground?: boolean } };
 			if (result.themeSettings) {
-				const st = result.themeSettings as any;
+				const st = result.themeSettings;
 				if (st.daisyTheme) {
 					setSettings(
 						normalizeSettings({
-							mode: "system",
+							mode: 'system',
 							selectedLightTheme: st.daisyTheme,
 							selectedDarkTheme: st.daisyTheme,
 							showTestPane: st.showTestPane ?? true,
 						})
 					);
 				} else {
-					setSettings(normalizeSettings(st as ThemeSettings));
+					setSettings(normalizeSettings(st));
 				}
 				setOverlaySolidBackground(Boolean(st.overlaySolidBackground));
 			}
 		} catch (error) {
-			console.error("Failed to load settings:", error);
+			console.error('Failed to load settings:', error);
+		}
+		try {
+			const res = await chromeStorage.sync.get('useDemoSchema') as { useDemoSchema?: boolean };
+			setUseDemoSchema(Boolean(res.useDemoSchema));
+		} catch (e) {
+			console.error('Failed to load dev schema toggle:', e);
 		}
 	};
 
 	const updateTheme = async (newSettings: Partial<ThemeSettings>) => {
 		let updatedSettings = { ...settings, ...newSettings } as ThemeSettings;
-		// If mode changed, ensure current mode selection is valid
 		if (newSettings.mode) {
 			updatedSettings = normalizeSettings(updatedSettings);
 		}
 		const previousSettings = { ...settings };
 		setSettings(updatedSettings);
 
+		if (!chromeStorage?.sync?.set || !chromeRuntime?.sendMessage) {
+			console.warn('chrome APIs unavailable to update theme');
+			return;
+		}
+
 		try {
-			await chrome.storage.sync.set({ themeSettings: { ...updatedSettings, overlaySolidBackground } });
-			await chrome.runtime.sendMessage({
-				target: "content-script",
+			await chromeStorage.sync.set({ themeSettings: { ...updatedSettings, overlaySolidBackground } });
+			await chromeRuntime.sendMessage({
+				target: 'content-script',
 				data: {
-					type: "UPDATE_THEME",
+					type: 'UPDATE_THEME',
 					settings: { ...updatedSettings, overlaySolidBackground },
 				},
 			});
 		} catch (error) {
-			console.error("Failed to update theme:", error);
+			console.error('Failed to update theme:', error);
 			setSettings(previousSettings);
 		}
 	};
 
 	const updateOverlayBackground = async (solid: boolean) => {
 		setOverlaySolidBackground(solid);
+		if (!chromeStorage?.sync?.set || !chromeRuntime?.sendMessage) {
+			console.warn('chrome APIs unavailable to update overlay background');
+			return;
+		}
 		try {
-			await chrome.storage.sync.set({ themeSettings: { ...settings, overlaySolidBackground: solid } });
-			await chrome.runtime.sendMessage({
+			await chromeStorage.sync.set({ themeSettings: { ...settings, overlaySolidBackground: solid } });
+			await chromeRuntime.sendMessage({
 				target: 'content-script',
 				data: {
 					type: 'UPDATE_THEME',
@@ -190,9 +185,26 @@ const Popup: React.FC = () => {
 		}
 	};
 
-	const loadUiAdapter = async () => {
+	const toggleUseDemoSchema = async (value: boolean) => {
+		setUseDemoSchema(value);
+		if (!chromeStorage?.sync?.set) {
+			console.warn('chrome.storage.sync.set unavailable for demo schema toggle');
+			return;
+		}
 		try {
-			const result = await chrome.storage.sync.get('uiAdapter');
+			await chromeStorage.sync.set({ useDemoSchema: value });
+		} catch (error) {
+			console.error('Failed to update dev schema toggle:', error);
+		}
+	};
+
+	const loadUiAdapter = async () => {
+		if (!chromeStorage?.sync?.get) {
+			console.warn('chrome.storage.sync.get unavailable for UI adapter');
+			return;
+		}
+		try {
+			const result = await chromeStorage.sync.get('uiAdapter') as { uiAdapter?: 'daisy' | 'shadcn' };
 			if (result.uiAdapter === 'shadcn' || result.uiAdapter === 'daisy') {
 				setUiAdapter(result.uiAdapter);
 			}
@@ -204,8 +216,12 @@ const Popup: React.FC = () => {
 	const updateUiAdapter = async (value: 'daisy' | 'shadcn') => {
 		const prev = uiAdapter;
 		setUiAdapter(value);
+		if (!chromeStorage?.sync?.set) {
+			console.warn('chrome.storage.sync.set unavailable for UI adapter');
+			return;
+		}
 		try {
-			await chrome.storage.sync.set({ uiAdapter: value });
+			await chromeStorage.sync.set({ uiAdapter: value });
 		} catch (error) {
 			console.error('Failed to save UI adapter:', error);
 			setUiAdapter(prev);
@@ -214,8 +230,8 @@ const Popup: React.FC = () => {
 
 	const activeList =
 		settings.mode === "dark" || (settings.mode === "system" && isSystemDark)
-			? darkThemes
-			: lightThemes;
+			? DARK_THEMES
+			: LIGHT_THEMES;
 	const currentSelection =
 		settings.mode === "dark" || (settings.mode === "system" && isSystemDark)
 			? settings.selectedDarkTheme
@@ -223,43 +239,20 @@ const Popup: React.FC = () => {
 
 	return (
 		<div
-			className="w-full h-full transition-colors duration-300 bg-base-300 border-2 border-gray-500/30 overflow-hidden"
+			className="w-full h-full transition-colors duration-300 bg-base-300 border-2 border-gray-500/30 overflow-y-auto"
 			data-theme={effectiveTheme}
 		>
 			{/* Force all DaisyUI themes to be included in build */}
-			<div className="hidden" data-theme="light"></div>
-			<div className="hidden" data-theme="dark"></div>
-			<div className="hidden" data-theme="cupcake"></div>
-			<div className="hidden" data-theme="bumblebee"></div>
-			<div className="hidden" data-theme="emerald"></div>
-			<div className="hidden" data-theme="corporate"></div>
-			<div className="hidden" data-theme="synthwave"></div>
-			<div className="hidden" data-theme="retro"></div>
-			<div className="hidden" data-theme="cyberpunk"></div>
-			<div className="hidden" data-theme="valentine"></div>
-			<div className="hidden" data-theme="halloween"></div>
-			<div className="hidden" data-theme="garden"></div>
-			<div className="hidden" data-theme="forest"></div>
-			<div className="hidden" data-theme="aqua"></div>
-			<div className="hidden" data-theme="lofi"></div>
-			<div className="hidden" data-theme="pastel"></div>
-			<div className="hidden" data-theme="fantasy"></div>
-			<div className="hidden" data-theme="wireframe"></div>
-			<div className="hidden" data-theme="black"></div>
-			<div className="hidden" data-theme="luxury"></div>
-			<div className="hidden" data-theme="dracula"></div>
-			<div className="hidden" data-theme="cmyk"></div>
-			<div className="hidden" data-theme="autumn"></div>
-			<div className="hidden" data-theme="business"></div>
-			<div className="hidden" data-theme="acid"></div>
-			<div className="hidden" data-theme="lemonade"></div>
-			<div className="hidden" data-theme="night"></div>
-			<div className="hidden" data-theme="coffee"></div>
-			<div className="hidden" data-theme="winter"></div>
-			<motion.div
+			{LIGHT_THEMES.map((theme) => (
+				<div key={theme.value} className="hidden" data-theme={theme.value}></div>
+			))}
+			{DARK_THEMES.map((theme) => (
+				<div key={theme.value} className="hidden" data-theme={theme.value}></div>
+			))}
+				<motion.div
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
-				className="w-full h-full"
+					className="w-full min-h-full"
 			>
 				{/* Header */}
 				<motion.div
@@ -327,7 +320,28 @@ const Popup: React.FC = () => {
 								</select>
 							</motion.div>
 
-							{/* DaisyUI Theme Selection */}
+						{/* Dev Schema Toggle */}
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{ delay: 0.12 }}
+							className="form-control"
+						>
+							<h3 className="text-lg font-semibold mb-3 text-base-content flex items-center gap-2">
+								Render Mode
+							</h3>
+							<label className="label cursor-pointer justify-start gap-3">
+								<input
+									type="checkbox"
+									checked={useDemoSchema}
+									onChange={(e) => toggleUseDemoSchema(e.target.checked)}
+									className="toggle toggle-secondary"
+								/>
+								<span className="label-text">Use local demo schema (instead of live page)</span>
+							</label>
+						</motion.div>
+
+						{/* DaisyUI Theme Selection */}
 							<motion.div
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
@@ -521,4 +535,6 @@ const container = document.getElementById("root");
 if (container) {
 	const root = createRoot(container);
 	root.render(<Popup />);
+} else {
+	console.error("Popup root container not found");
 }

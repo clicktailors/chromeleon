@@ -1,21 +1,16 @@
-// Background service worker for Chromeleon extension (ESM)
 console.log('Chromeleon background script loaded');
 
-// Basic background script functionality
 chrome.runtime.onInstalled.addListener(() => {
 	console.log('Chromeleon extension installed');
 });
 
-// Handle messages from popup and forward to content scripts
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 	console.log('Background script received message:', message);
-	
-	// Handle messages from popup
+
 	if (message.target === 'content-script') {
-		handleContentScriptMessage(message);
+		void handleContentScriptMessage(message);
 	}
-	
-	// Always send a response to prevent connection errors
+
 	sendResponse({ success: true });
 });
 

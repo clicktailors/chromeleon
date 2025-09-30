@@ -1,0 +1,116 @@
+---
+type: code
+globs:
+  - "src/**/*"
+  - "*.html"
+  - "*.css"
+description: >
+  Strict styling guidelines for Chromeleon overlay architecture. This is a single-page app that completely replaces the user experience of visited webpages. All styling must be contained within React components and overlay - the original webpage remains unmodified.
+alwaysApply: true
+---
+
+# Chromeleon Styling Architecture
+
+## 🏗️ ARCHITECTURAL PRINCIPLES
+
+**Chromeleon is a single-page app that overlays and completely replaces the user experience of visited webpages.**
+
+### Core Requirements:
+- **Original webpage remains unmodified** - no CSS changes to host page
+- **All styling contained within overlay** - React components handle all visual presentation
+- **Page data scraped to JSON** - content extracted and rendered by React app
+- **Theme-governed styling** - selected UI library (shadcn/daisy) controls appearance
+- **Scroll prevention only** - only exception is preventing page scrolling
+
+## 🚫 ABSOLUTELY FORBIDDEN Patterns
+
+### CSS Injection (NEVER ALLOWED)
+- **Dynamic style injection**: Creating `<style>` elements with JavaScript
+- **Style textContent**: `style.textContent = '...'`
+- **CSS injection**: Any form of injecting CSS content directly into DOM
+- **Style element creation**: `document.createElement('style')`
+
+### Style Manipulation (NEVER ALLOWED)
+- **Inline styles**: `style="color: red;"` or `style={{color: 'red'}}`
+- **Style property manipulation**: `element.style.color = 'red'`
+- **cssText usage**: `element.style.cssText = 'color: red;'`
+- **setProperty**: `element.style.setProperty('--var', value)`
+
+### Host Page Modification (NEVER ALLOWED)
+- **Modifying host page CSS**: No changes to original webpage styling
+- **Injecting into host page**: No elements added to original page
+- **Style overrides on host**: No CSS that affects original page elements
+
+## ✅ REQUIRED Patterns
+
+### Shadow DOM CSS Loading (ONLY APPROACH)
+- **External CSS files**: Load CSS via `<link>` elements only
+- **Web accessible resources**: Use `chrome.runtime.getURL()` for CSS files
+- **No CSS injection**: Never inject CSS content directly
+
+### React Component Styling
+- **Tailwind classes**: `className="text-red-500 bg-blue-100"`
+- **DaisyUI components**: `className="btn btn-primary"`
+- **shadcn components**: Use shadcn component library classes
+- **Conditional classes**: `className={isActive ? 'bg-blue-500' : 'bg-gray-500'}`
+
+### Overlay Architecture
+- **Shadow DOM isolation**: All overlay content in shadow DOM
+- **React rendering**: All UI rendered by React components
+- **Theme data attributes**: `data-theme="dark"` on shadow DOM host
+- **Class-based state**: Use `classList.add/remove()` for state changes
+
+## 🔧 Pre-Solution Checklist
+
+**Before implementing ANY styling solution, verify:**
+- [ ] Does this use CSS injection? → **STOP, find alternative**
+- [ ] Does this manipulate .style properties? → **STOP, use classes**
+- [ ] Does this create <style> elements? → **STOP, use external CSS**
+- [ ] Does this modify the host page? → **STOP, use overlay only**
+- [ ] Does this follow the overlay architecture? → **Must be YES**
+
+## 📋 Correct Implementation Examples
+
+### ✅ Shadow DOM CSS Loading
+```tsx
+// Load CSS as web accessible resource
+const link = document.createElement("link");
+link.rel = "stylesheet";
+link.href = chrome.runtime.getURL("src/styles/content.css");
+shadow.appendChild(link);
+```
+
+### ✅ React Component Styling
+```tsx
+// All styling in React components
+<div className="fixed inset-0 bg-base-100 text-base-content">
+  <button className="btn btn-primary">Click me</button>
+</div>
+```
+
+### ✅ Theme Application
+```tsx
+// Apply theme to shadow DOM host
+host.setAttribute('data-theme', 'dark');
+```
+
+### ✅ Scroll Prevention (ONLY exception)
+```tsx
+// Only allowed modification to host page
+document.body.classList.add('overflow-hidden');
+```
+
+## 🚨 If You Find Yourself About To...
+
+**Use CSS injection** → STOP. Load CSS via `<link>` element to external file.
+**Manipulate styles** → STOP. Use Tailwind/DaisyUI classes in React components.
+**Modify host page** → STOP. All changes must be within overlay shadow DOM.
+**Inject into main document** → STOP. All content must be in shadow DOM.
+
+## 🎯 Architecture Summary
+
+1. **Host page**: Unmodified, only scroll prevention
+2. **Overlay**: Shadow DOM with React app
+3. **Styling**: External CSS files + Tailwind/DaisyUI classes
+4. **Data**: Scraped to JSON, rendered by React
+5. **Themes**: Applied via data attributes on shadow DOM host

@@ -1,8 +1,8 @@
-import { injectDaisyUICSS, removeAllCSS, setDaisyUITheme, removeDaisyUITheme } from './cssInjector';
+import { setDaisyUITheme } from './cssInjector';
 import { applyGentleTheme } from './themeApplicators';
 import { StorageManager } from '../storage/storageManager';
 import type { ThemeSettings, ExtensionState } from '../types';
-import { ensureOverlay } from '../ui/overlay';
+import { ensureOverlay, hideOverlay, showOverlay } from '../ui/overlay';
 
 /**
  * Main theme management class that coordinates all theme operations
@@ -18,7 +18,7 @@ export class ThemeManager {
 				mode: 'system',
 				selectedLightTheme: 'retro',
 				selectedDarkTheme: 'dracula',
-				showTestPane: true,
+				showTestPane: false,
 			}
 		};
 	}
@@ -75,6 +75,9 @@ export class ThemeManager {
 		await StorageManager.saveExtensionState(enabled);
 
 		if (enabled) {
+			// Ensure overlay exists and show it
+			ensureOverlay();
+			showOverlay();
 			await this.applyCurrentTheme();
 		} else {
 			this.removeTheme();
@@ -105,14 +108,11 @@ export class ThemeManager {
 			return;
 		}
 
-		// Ensure overlay exists before applying theme or test UI
+		// Ensure overlay exists and show it
 		ensureOverlay();
+		showOverlay();
 
-		// Remove existing theme if present
-		this.removeTheme();
-
-		// Inject DaisyUI CSS if needed (no-op for head; overlay handles CSS)
-		injectDaisyUICSS();
+		// DaisyUI CSS is now loaded in shadow DOM overlay
 
 		// Compute effective theme according to mode/system
 		const isSystemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
@@ -133,15 +133,15 @@ export class ThemeManager {
 	 * Remove all theme modifications
 	 */
 	removeTheme(): void {
-		removeAllCSS();
-		removeDaisyUITheme();
-		
 		// Remove test component
 		const testComponent = document.getElementById('chromeleon-theme-test');
 		if (testComponent) {
 			testComponent.remove();
 		}
-		
+
+		// Hide overlay when extension is disabled
+		hideOverlay();
+
 		console.log('Chromeleon theme removed');
 	}
 

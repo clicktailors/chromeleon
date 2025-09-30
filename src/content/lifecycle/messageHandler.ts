@@ -15,6 +15,7 @@ export class MessageHandler {
 	 * Initialize message listener
 	 */
 	initialize(): void {
+		// @ts-ignore: chrome is injected by the extension environment
 		chrome.runtime.onMessage.addListener((message: ChromeleonMessage) => {
 			this.handleMessage(message);
 		});
@@ -77,23 +78,15 @@ export class MessageHandler {
 					const isSystemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
 					const effective = mode === 'dark' ? darkTheme : mode === 'light' ? lightTheme : (isSystemDark ? darkTheme : lightTheme);
 					overlayEl.setAttribute('data-theme', effective);
-					// After theme is applied, toggle overlay mode and inline fallback styles
+					// After theme is applied, toggle overlay mode via classes (no inline styles)
+					overlayEl.classList.add('fixed', 'inset-0', 'z-[2147483647]', 'pointer-events-auto', 'overflow-auto');
+					overlayEl.removeAttribute('style');
 					if (st.overlaySolidBackground) {
-						overlayEl.classList.add('solid');
-						const computed = getComputedStyle(overlayEl);
-						const baseColor = computed.getPropertyValue('--b1').trim();
-						if (baseColor) {
-							overlayEl.style.background = baseColor;
-							overlayEl.style.backgroundColor = baseColor;
-						}
-						overlayEl.style.backdropFilter = '' as any;
-						(overlayEl.style as any).webkitBackdropFilter = '';
+						overlayEl.classList.add('bg-base-100');
+						overlayEl.classList.remove('bg-black/50', 'backdrop-blur');
 					} else {
-						overlayEl.classList.remove('solid');
-						overlayEl.style.backgroundColor = '';
-						overlayEl.style.background = 'rgba(0, 0, 0, 0.5)';
-						overlayEl.style.backdropFilter = 'blur(8px)';
-						(overlayEl.style as any).webkitBackdropFilter = 'blur(8px)';
+						overlayEl.classList.remove('bg-base-100');
+						overlayEl.classList.add('bg-black/50', 'backdrop-blur');
 					}
 				}
 			} catch {}

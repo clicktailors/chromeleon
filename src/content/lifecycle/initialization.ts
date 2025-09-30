@@ -92,11 +92,13 @@ export class Initialization {
 	 * Listen for chrome.storage changes so content reacts to popup setting toggles
 	 */
 	private setupStorageChangeListener(): void {
-		chrome.storage.onChanged.addListener((changes, areaName) => {
-			if (areaName !== 'sync') return;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(chrome as any).storage.onChanged.addListener(
+			(changes: Record<string, any>, areaName: string) => {
+				if (areaName !== 'sync') return;
 
-			// Theme settings updated in popup
-			if (changes.themeSettings && changes.themeSettings.newValue) {
+				// Theme settings updated in popup
+				if (changes.themeSettings && changes.themeSettings.newValue) {
 				const newSettings = changes.themeSettings.newValue as ThemeSettings;
 				// Apply without waiting; failures are logged
 				void this.themeManager.updateTheme(newSettings);

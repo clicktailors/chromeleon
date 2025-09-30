@@ -3,13 +3,115 @@ type: code
 globs:
   - "src/**/*"
 description: >
-  Ensure consistent architectural patterns for the Chromeleon extension, using React components and avoiding direct DOM mutation or inline CSS.
+  Chromeleon overlay architecture: Single-page app that completely replaces webpage user experience. Original page remains unmodified, all interaction happens in shadow DOM overlay with React components.
 alwaysApply: true
 ---
 
-# Architecture Rules
+# Chromeleon Overlay Architecture
 
-- Use React components to build UI instead of injecting HTML or CSS directly into the page.
-- Avoid inline styles; use Tailwind CSS and daisyUI classes through JSX.
-- Encapsulate logic and presentation cleanly using hooks and component layers.
-- Keep rendering and state logic separate from content scraping or AI inference layers.
+## 🎯 Core Architecture Principle
+
+**Chromeleon is a single-page app that overlays and completely replaces the user experience of visited webpages.**
+
+## 🏗️ Architectural Requirements
+
+### Host Page (Original Website)
+- **MUST remain completely unmodified**
+- **ONLY exception**: Scroll prevention (`overflow-hidden` class)
+- **NO CSS changes** to original page elements
+- **NO DOM injection** into original page
+
+### Overlay System
+- **Shadow DOM isolation** - all content in shadow DOM
+- **React component rendering** - all UI built with React
+- **Complete user experience replacement** - users interact with overlay, not original page
+- **Theme-governed styling** - selected UI library (shadcn/daisy) controls appearance
+
+### Data Flow
+- **Page scraping** - extract content from original page to JSON
+- **JSON interpretation** - React app processes scraped data
+- **Component rendering** - React components display processed data
+- **User interaction** - all interaction happens within overlay
+
+## 🚫 Architectural Violations (NEVER ALLOWED)
+
+### Host Page Modification
+- **CSS injection into main document**
+- **DOM manipulation of original page elements**
+- **Style overrides on host page**
+- **Adding elements to original page**
+
+### Direct DOM Manipulation
+- **Style property manipulation** (`element.style.*`)
+- **CSS injection** (`style.textContent`, `createElement('style')`)
+- **Inline styles** (`style="..."` or `style={{...}}`)
+- **Direct HTML injection** (use React components instead)
+
+## ✅ Required Architectural Patterns
+
+### React-First Approach
+- **React components** for all UI elements
+- **JSX rendering** instead of HTML injection
+- **Component state management** for dynamic behavior
+- **Props and hooks** for data flow
+
+### Shadow DOM Isolation
+- **All overlay content** in shadow DOM
+- **External CSS loading** via `<link>` elements only
+- **Theme data attributes** on shadow DOM host
+- **Class-based styling** with Tailwind/DaisyUI
+
+### Data Processing Pipeline
+- **Content scraping** → JSON conversion
+- **JSON processing** → React component props
+- **Component rendering** → User interface
+- **User interaction** → Overlay-only responses
+
+## 🔧 Implementation Checklist
+
+**Before implementing any feature:**
+- [ ] Does this modify the original webpage? → **MUST BE NO**
+- [ ] Is this contained within the overlay? → **MUST BE YES**
+- [ ] Does this use React components? → **MUST BE YES**
+- [ ] Does this follow shadow DOM isolation? → **MUST BE YES**
+- [ ] Does this use proper CSS loading? → **MUST BE YES**
+
+## 📋 Correct Implementation Examples
+
+### ✅ Overlay Creation
+```tsx
+// Create shadow DOM overlay
+const { host, shadow } = ensureShadowHost('chromeleon-root');
+// Load CSS externally
+const link = document.createElement('link');
+link.href = chrome.runtime.getURL('src/styles/content.css');
+shadow.appendChild(link);
+```
+
+### ✅ React Component Rendering
+```tsx
+// All UI in React components
+function OverlayApp() {
+  return (
+    <div className="fixed inset-0 bg-base-100">
+      <ChromeleonApp />
+    </div>
+  );
+}
+```
+
+### ✅ Data Scraping & Rendering
+```tsx
+// Scrape page data to JSON
+const pageData = scrapePageToJSON();
+// Render with React components
+<SchemaRenderer data={pageData} theme={selectedTheme} />
+```
+
+## 🎯 Architecture Summary
+
+1. **Original page**: Unmodified, only scroll prevention
+2. **Overlay**: Shadow DOM with React app
+3. **Data**: Scraped to JSON, processed by React
+4. **Styling**: External CSS + Tailwind/DaisyUI classes
+5. **Interaction**: All within overlay, none with original page

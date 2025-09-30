@@ -53,19 +53,7 @@ class DevThemeManager {
 		if (!indicator) {
 			indicator = document.createElement('div');
 			indicator.id = 'dev-theme-indicator';
-			indicator.style.cssText = `
-				position: fixed;
-				top: 10px;
-				left: 10px;
-				background: #4f46e5;
-				color: white;
-				padding: 8px 12px;
-				border-radius: 6px;
-				font-size: 12px;
-				font-weight: 500;
-				z-index: 999999;
-				box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-			`;
+			indicator.className = 'fixed top-2.5 left-2.5 bg-indigo-600 text-white px-3 py-2 rounded-md text-xs font-medium z-[999999] shadow-lg';
 			document.body.appendChild(indicator);
 		}
 		indicator.textContent = `Theme: ${this.currentTheme}`;

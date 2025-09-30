@@ -1,0 +1,117 @@
+{
+	"type": "page",
+	"children": [
+		{
+			"type": "navbar",
+			"config": {
+				"type": "horizontal",
+				"items": [
+					{ "label": "About", "href": "#about" },
+					{ "label": "Store", "href": "#store" },
+					{ "label": "Gmail", "href": "#gmail" },
+					{ "label": "Images", "href": "#images" }
+				],
+				"brand": {
+					"name": "Google",
+					"logo": "/icon.svg"
+				}
+			}
+		},
+		{
+			"type": "hero",
+			"title": "Google",
+			"subtitle": "Search the world's information, including webpages, images, videos and more.",
+			"actions": [
+				{ "label": "Google Search", "variant": "primary", "href": "#search" },
+				{ "label": "I'm Feeling Lucky", "variant": "secondary", "href": "#lucky" }
+			]
+		},
+		{
+			"type": "searchBox",
+			"placeholder": "Search Google or type a URL",
+			"size": "lg"
+		},
+		{
+			"type": "section",
+			"title": "Quick Links",
+			"children": [
+				{
+					"type": "linkRow",
+					"links": [
+						{ "label": "Advertising", "href": "#advertising" },
+						{ "label": "Business", "href": "#business" },
+						{ "label": "How Search works", "href": "#how-search-works" }
+					]
+				}
+			]
+		},
+		{
+			"type": "section",
+			"title": "Components Demo",
+			"children": [
+				{
+					"type": "grid",
+					"columns": 2,
+					"children": [
+						{
+							"type": "card",
+							"title": "Buttons",
+							"body": "Various button styles and sizes"
+						},
+						{
+							"type": "card",
+							"title": "Badges",
+							"body": "Status indicators and labels"
+						}
+					]
+				},
+				{
+					"type": "buttonRow",
+					"buttons": [
+						{ "label": "Primary", "variant": "primary" },
+						{ "label": "Secondary", "variant": "secondary" },
+						{ "label": "Accent", "variant": "accent" },
+						{ "label": "Ghost", "variant": "ghost" },
+						{ "label": "Outline", "variant": "outline" }
+					]
+				},
+				{
+					"type": "badgeRow",
+					"badges": [
+						{ "text": "Primary", "variant": "primary" },
+						{ "text": "Secondary", "variant": "secondary" },
+						{ "text": "Accent", "variant": "accent" },
+						{ "text": "Success", "variant": "success" },
+						{ "text": "Warning", "variant": "warning" },
+						{ "text": "Error", "variant": "error" }
+					]
+				},
+				{
+					"type": "flex",
+					"direction": "row",
+					"justify": "between",
+					"children": [
+						{ "type": "alert", "tone": "info", "text": "Info alert" },
+						{ "type": "alert", "tone": "success", "text": "Success alert" }
+					]
+				}
+			]
+		},
+		{
+			"type": "table",
+			"headers": ["Component", "Purpose", "Status"],
+			"rows": [
+				["Navbar", "Renders navigation menus with brand and items", "✅ Enhanced"],
+				["Hero", "Large banner sections with title and actions", "✅ New"],
+				["LinkRow", "Horizontal row of links", "✅ New"],
+				["SearchBox", "Search input field", "✅ New"],
+				["Grid", "Responsive grid layout", "✅ New"],
+				["Flex", "Flexbox layout container", "✅ New"],
+				["SchemaRenderer", "Renders schema-defined UI", "✅ Enhanced"],
+				["IRRenderer", "Renders scraped IR for live pages", "✅ Existing"]
+			]
+		}
+	]
+}
+
+

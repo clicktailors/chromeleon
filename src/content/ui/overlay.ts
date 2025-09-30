@@ -1,163 +1,277 @@
-import { ensureShadowHost } from '../utils/domUtils';
+import { ensureShadowHost } from "../utils/domUtils";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { getRoot, setRoot, clearRoot } from "@/content/utils/rootRegistry";
+import { chromeStorage } from "@/utils/chromeApi";
+import { OverlayApp } from "./OverlayApp";
 
-const HOST_ID = 'chromeleon-root';
+const HOST_ID = "chromeleon-root";
 
-export function ensureOverlay(): { host: HTMLElement; shadow: ShadowRoot; mount: HTMLElement } {
+export function ensureOverlay(): {
+	host: HTMLElement;
+	shadow: ShadowRoot;
+	mount: HTMLElement;
+} {
+	console.log("Ensuring overlay exists...");
 	const { host, shadow } = ensureShadowHost(HOST_ID);
+	console.log("Host:", host, "Shadow:", shadow);
 
 	// Prevent background page from scrolling while overlay is active
-	const scrollLockId = 'chromeleon-scroll-lock';
-	let scrollLock = document.getElementById(scrollLockId) as HTMLStyleElement | null;
+	const scrollLockId = "chromeleon-scroll-lock";
+	let scrollLock = document.getElementById(scrollLockId);
 	if (!scrollLock) {
-		scrollLock = document.createElement('style');
+		scrollLock = document.createElement("div");
 		scrollLock.id = scrollLockId;
-		scrollLock.textContent = `html, body { overflow: hidden !important; }`;
+		scrollLock.className = "fixed inset-0 z-[2147483645] pointer-events-none";
+		// Use class-based scroll lock - no style manipulation
+		document.body.classList.add('overflow-hidden');
 		document.head.appendChild(scrollLock);
 	}
 
-	// Load UI library CSS inside Shadow DOM only (no head injection)
-	const cssId = 'chromeleon-daisyui-css';
+	// Load CSS as web accessible resource - no injection
+	const cssId = "chromeleon-daisyui-css";
 	let link = shadow.getElementById(cssId) as HTMLLinkElement | null;
 	if (!link) {
-		link = document.createElement('link');
+		link = document.createElement("link");
 		link.id = cssId;
-		link.rel = 'stylesheet';
-		link.href = chrome.runtime.getURL('assets/popup.css');
+		link.rel = "stylesheet";
+		// Use web accessible resource path
+		link.href = chrome.runtime.getURL("src/styles/content.css");
 		shadow.appendChild(link);
 	}
 
-    // Ensure overlay panel styling inside Shadow DOM
-	const styleId = 'chromeleon-overlay-style';
-	let style = shadow.getElementById(styleId) as HTMLStyleElement | null;
-	if (!style) {
-		style = document.createElement('style');
-		style.id = styleId;
-		style.textContent = `
-            #backdrop {
-                position: fixed;
-                inset: 0;
-                z-index: 2147483646;
-                pointer-events: none;
-                background: transparent;
-            }
-            #overlay {
-                position: fixed;
-                inset: 0;
-                z-index: 2147483647;
-                pointer-events: auto;
-                overflow: auto;
-                overscroll-behavior: contain;
-                -webkit-overflow-scrolling: touch;
-                display: block;
-                background: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(8px);
-                -webkit-backdrop-filter: blur(8px);
-            }
-            #overlay.solid {
-                background: rgb(var(--b1));
-                backdrop-filter: none;
-                -webkit-backdrop-filter: none;
-            }
-            #mount {
-                width: 100%;
-                max-width: 1200px;
-                margin: 24px auto;
-                background-color: rgb(var(--b1));
-                color: rgb(var(--bc));
-                border: 1px solid rgb(var(--b2));
-                border-radius: 12px;
-                box-shadow: 0 10px 30px rgba(0,0,0,.2);
-                overflow: visible;
-                padding: 8px;
-            }
-		`;
-		shadow.appendChild(style);
+	// Overlay styling is now handled through Tailwind classes in the elements themselves
+
+	// Ensure a full-viewport overlay container that will capture scroll
+	let overlay = shadow.getElementById("overlay") as HTMLElement | null;
+	if (!overlay) {
+		console.log("Creating overlay element...");
+		overlay = document.createElement("div");
+		overlay.id = "overlay";
+		// Apply Tailwind classes for proper positioning and theming
+		overlay.className = "fixed inset-0 z-[2147483647] pointer-events-auto overflow-auto bg-base-100";
+		shadow.appendChild(overlay);
+		console.log("Overlay element created with classes:", overlay.className);
+	} else {
+		console.log("Overlay element already exists");
 	}
 
-    // Ensure a full-viewport overlay container that will capture scroll
-    let overlay = shadow.getElementById('overlay') as HTMLElement | null;
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'overlay';
-        shadow.appendChild(overlay);
-    }
+	// Ensure a backdrop exists (kept for layering, but no longer styled)
+	let backdrop = shadow.getElementById("backdrop") as HTMLElement | null;
+	if (!backdrop) {
+		backdrop = document.createElement("div");
+		backdrop.id = "backdrop";
+		backdrop.className = "fixed inset-0 z-[2147483646] pointer-events-none";
+		shadow.appendChild(backdrop);
+	}
 
-    // Ensure a backdrop exists (kept for layering, but no longer styled)
-    let backdrop = shadow.getElementById('backdrop') as HTMLElement | null;
-    if (!backdrop) {
-        backdrop = document.createElement('div');
-        backdrop.id = 'backdrop';
-        shadow.appendChild(backdrop);
-    }
-
-    let mount = shadow.getElementById('mount') as HTMLElement | null;
+	let mount = shadow.getElementById("mount") as HTMLElement | null;
 	if (!mount) {
-		mount = document.createElement('div');
-		mount.id = 'mount';
-        overlay.appendChild(mount);
-    } else if (mount.parentElement !== overlay) {
-        overlay.appendChild(mount);
+		mount = document.createElement("div");
+		mount.id = "mount";
+		// Apply Tailwind classes for proper sizing and theming
+		mount.className = "w-full h-full overflow-auto p-0 m-0";
+		overlay.appendChild(mount);
+	} else if (mount.parentElement !== overlay) {
+		overlay.appendChild(mount);
 	}
 
 	// Read settings to determine overlay style (transparent+blur vs solid)
 	const applyOverlayMode = (solid: boolean) => {
-		if (!overlay) return;
+		if (!overlay) {
+			console.log("Overlay not found for mode application");
+			return;
+		}
+		console.log("Applying overlay mode:", solid ? "solid" : "translucent");
+
+		// Reset to base classes
+		overlay.className = "fixed inset-0 z-[2147483647] pointer-events-auto overflow-auto";
+
 		if (solid) {
-			overlay.classList.add('solid');
-			// Resolve CSS variable to actual color with multiple fallbacks
-			let baseColor = '';
-			try {
-				baseColor = getComputedStyle(document.documentElement).getPropertyValue('--b1').trim();
-			} catch {}
-			if (!baseColor) {
-				try { baseColor = getComputedStyle(host).getPropertyValue('--b1').trim(); } catch {}
-			}
-			if (!baseColor) {
-				try { baseColor = getComputedStyle(overlay).getPropertyValue('--b1').trim(); } catch {}
-			}
-			const channels = baseColor.replace(/\s+/g, ' ').trim();
-			const rgbColor = channels ? `rgb(${channels})` : '#1d232a';
-			overlay.style.background = rgbColor;
-			overlay.style.backgroundColor = rgbColor;
-			overlay.style.backdropFilter = '' as any;
-			(overlay.style as any).webkitBackdropFilter = '';
+			// Solid background using DaisyUI token - let DaisyUI handle theming
+			overlay.classList.add("bg-base-100");
 		} else {
-			overlay.classList.remove('solid');
-			overlay.style.backgroundColor = '';
-			overlay.style.background = 'rgba(0, 0, 0, 0.5)';
-			overlay.style.backdropFilter = 'blur(8px)';
-			(overlay.style as any).webkitBackdropFilter = 'blur(8px)';
+			// Translucent blurred backdrop
+			overlay.classList.add("bg-black/50", "backdrop-blur");
 		}
 	};
+	// Apply theme settings to overlay
 	try {
-		void chrome.storage.sync.get('themeSettings').then((res) => {
+		chromeStorage?.sync?.get?.("themeSettings")?.then?.((res: any) => {
 			const st = res?.themeSettings || {};
-			// Ensure DaisyUI variables apply within shadow by setting theme on overlay container FIRST
-			const mode = st.mode || 'system';
-			const lightTheme = st.selectedLightTheme || 'retro';
-			const darkTheme = st.selectedDarkTheme || 'dracula';
-			const isSystemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
-			const effective = mode === 'dark' ? darkTheme : mode === 'light' ? lightTheme : (isSystemDark ? darkTheme : lightTheme);
-			if (overlay) overlay.setAttribute('data-theme', effective);
-			// Then apply overlay mode so var(--b1) is available
+			const mode = st.mode || "system";
+			const lightTheme = st.selectedLightTheme || "retro";
+			const darkTheme = st.selectedDarkTheme || "dracula";
+			const isSystemDark =
+				window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ??
+				false;
+			const effective =
+				mode === "dark"
+					? darkTheme
+					: mode === "light"
+					? lightTheme
+					: isSystemDark
+					? darkTheme
+					: lightTheme;
+			
+			// Apply theme to both host and overlay elements
+			if (overlay) overlay.setAttribute("data-theme", effective);
+			host.setAttribute("data-theme", effective);
+			
+			// Apply overlay mode
 			applyOverlayMode(Boolean(st.overlaySolidBackground));
 		});
-	} catch {}
-
-	// Apply saved theme to overlay host (compute effective by mode)
-	try {
-		void chrome.storage.sync.get('themeSettings').then((res) => {
-			const st = res?.themeSettings || {};
-			const mode = st.mode || 'system';
-			const lightTheme = st.selectedLightTheme || 'retro';
-			const darkTheme = st.selectedDarkTheme || 'dracula';
-			const isSystemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
-			const effective = mode === 'dark' ? darkTheme : mode === 'light' ? lightTheme : (isSystemDark ? darkTheme : lightTheme);
-			host.setAttribute('data-theme', effective);
-		});
-	} catch {}
+	} catch {
+		// Fallback: apply default solid background
+		applyOverlayMode(true);
+	}
 	return { host, shadow, mount };
 }
 
+/**
+ * Hide the overlay when extension is disabled
+ */
+export function hideOverlay(): void {
+	console.log("Hiding overlay...");
+	const host = document.getElementById(HOST_ID) as HTMLElement | null;
+	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
 
+	if (!host || !shadow) {
+		console.log("Host or shadow not found, nothing to hide");
+		return;
+	}
 
+	// Hide overlay by adding hidden class but preserve other classes
+	const overlay = shadow.getElementById("overlay");
+	if (overlay) {
+		console.log("Hiding overlay element...");
+		overlay.classList.add("hidden");
+		// Keep all classes so they can be restored when shown
+	} else {
+		console.log("Overlay element not found");
+	}
+
+	// Remove scroll lock
+	const scrollLockId = "chromeleon-scroll-lock";
+	const scrollLock = document.getElementById(scrollLockId);
+	if (scrollLock) {
+		scrollLock.remove();
+		console.log("Scroll lock removed");
+	} else {
+		console.log("Scroll lock not found");
+	}
+
+	const mount = shadow.getElementById("mount") as HTMLElement | null;
+	if (mount) {
+		const root = getRoot(mount);
+		root?.unmount();
+		clearRoot(mount);
+	}
+
+	console.log("Chromeleon overlay hidden");
+}
+
+/**
+ * Render the React overlay app
+ */
+export function renderOverlayApp(): void {
+	const host = document.getElementById(HOST_ID) as HTMLElement | null;
+	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
+
+	if (!host || !shadow) {
+		console.error("Cannot render overlay app - host or shadow not found");
+		return;
+	}
+
+	const mount = shadow.getElementById("mount");
+	if (!mount) {
+		console.error("Mount element not found in shadow DOM");
+		return;
+	}
+
+	// Create React root and render the overlay app
+	try {
+		let root = getRoot(mount);
+		if (!root) {
+			root = createRoot(mount);
+			setRoot(mount, root);
+			console.log("Created new React root for overlay");
+		} else {
+			console.log("Using existing React root for overlay");
+		}
+		
+		// Render the React app
+		root.render(React.createElement(OverlayApp));
+		console.log("React overlay app rendered successfully");
+		console.log("Mount element content:", mount.innerHTML.substring(0, 200) + "...");
+	} catch (error) {
+		console.error("Failed to render React overlay app:", error);
+	}
+}
+
+/**
+ * Show the overlay when extension is enabled
+ */
+export function showOverlay(): void {
+	const host = document.getElementById(HOST_ID) as HTMLElement | null;
+	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
+
+	if (!host || !shadow) {
+		console.error("Chromeleon overlay not found - host or shadow missing");
+		return;
+	}
+
+	// Show overlay by removing hidden class and applying theme
+	const overlay = shadow.getElementById("overlay");
+	if (overlay) {
+		console.log("Found overlay element, showing it...");
+		console.log("Overlay current classes:", overlay.className);
+		console.log("Overlay computed style:", window.getComputedStyle(overlay));
+
+		// Remove hidden class
+		overlay.classList.remove("hidden");
+
+		// Apply the current overlay mode (solid vs translucent)
+		try {
+			chromeStorage?.sync?.get?.("themeSettings", (res: any) => {
+				const st = res?.themeSettings || {};
+				if (st.overlaySolidBackground) {
+					// Solid background - let DaisyUI handle theming
+					overlay.className = "fixed inset-0 z-[2147483647] pointer-events-auto overflow-auto bg-base-100";
+				} else {
+					// Translucent background
+					overlay.className = "fixed inset-0 z-[2147483647] pointer-events-auto overflow-auto bg-black/50 backdrop-blur";
+				}
+				console.log(
+					"Applied overlay mode:",
+					st.overlaySolidBackground ? "solid" : "translucent"
+				);
+			});
+		} catch (error) {
+			console.error("Failed to apply overlay mode:", error);
+			// Fallback to solid background
+			overlay.className = "fixed inset-0 z-[2147483647] pointer-events-auto overflow-auto bg-base-100";
+		}
+	} else {
+		console.error("Overlay element not found in shadow DOM");
+	}
+
+	// Re-apply scroll lock
+	const scrollLockId = "chromeleon-scroll-lock";
+	let scrollLock = document.getElementById(scrollLockId);
+	if (!scrollLock) {
+		scrollLock = document.createElement("div");
+		scrollLock.id = scrollLockId;
+		scrollLock.className = "fixed inset-0 z-[2147483645] pointer-events-none";
+		document.body.classList.add('overflow-hidden');
+		document.head.appendChild(scrollLock);
+		console.log("Scroll lock applied");
+	} else {
+		console.log("Scroll lock already exists");
+	}
+
+	console.log("Chromeleon overlay shown");
+
+	// Render React app into the overlay
+	renderOverlayApp();
+}
