@@ -1,48 +1,49 @@
-/**
- * Apply gentle theme that preserves existing styles and adds DaisyUI
- * Since we're now using React/Tailwind components, we only manage test components
- */
-export function applyGentleTheme(daisyTheme: string, showTestPane: boolean): void {
-	console.log('🌙 Applying theme with React/Tailwind components');
+import { getChromeleonOverlay } from './domUtils';
 
-	// Ensure test component is synchronized to the toggle state
+/**
+ * Test pane component for verifying DaisyUI theme switching
+ * Shows a small card with sample DaisyUI components to preview the current theme
+ */
+
+const TEST_COMPONENT_ID = 'chromeleon-theme-test';
+
+/**
+ * Toggle the test pane visibility based on user settings
+ */
+export function toggleTestPane(daisyTheme: string, showTestPane: boolean): void {
+	console.log('🧪 Managing test pane, show:', showTestPane);
+
 	if (showTestPane) {
-		addTestComponent(daisyTheme);
+		showTestComponent(daisyTheme);
 	} else {
-		removeTestComponent();
+		hideTestComponent();
 	}
-
-	console.log('Chromeleon theme applied with DaisyUI theme:', daisyTheme);
 }
 
 /**
- * Add a test component to verify DaisyUI theme switching
+ * Hide the test component
  */
-function getOverlayContainer(): { shadow?: ShadowRoot; overlay?: HTMLElement } {
-	const host = document.getElementById('chromeleon-root') as HTMLElement | null;
-	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
-	const overlay = shadow?.getElementById?.('overlay') as HTMLElement | undefined;
-	return { shadow, overlay };
-}
-
-function removeTestComponent(): void {
-	const { shadow } = getOverlayContainer();
-	const inShadow = shadow?.getElementById?.('chromeleon-theme-test') as HTMLElement | undefined;
+function hideTestComponent(): void {
+	const { shadow } = getChromeleonOverlay();
+	const inShadow = shadow?.getElementById?.(TEST_COMPONENT_ID) as HTMLElement | undefined;
 	if (inShadow) {
 		inShadow.remove();
 		return;
 	}
-	const inDoc = document.getElementById('chromeleon-theme-test');
+	const inDoc = document.getElementById(TEST_COMPONENT_ID);
 	if (inDoc) inDoc.remove();
 }
 
-function addTestComponent(theme: string): void {
+/**
+ * Show the test component with DaisyUI theme preview
+ */
+function showTestComponent(theme: string): void {
 	// Remove any existing instance (document or shadow)
-	removeTestComponent();
+	hideTestComponent();
 
 	// Create test component with DaisyUI classes
 	const testComponent = document.createElement('div');
-	testComponent.id = 'chromeleon-theme-test';
+	testComponent.id = TEST_COMPONENT_ID;
 	testComponent.setAttribute('data-theme', theme);
 	testComponent.innerHTML = `
 		<div class="card bg-base-100 shadow-xl p-4 m-4 max-w-sm fixed top-2.5 right-2.5 z-[99999]">
@@ -59,7 +60,7 @@ function addTestComponent(theme: string): void {
 	`;
 
 	// Always prefer overlay container inside Shadow DOM to keep everything isolated
-	const { shadow, overlay } = getOverlayContainer();
+	const { shadow, overlay } = getChromeleonOverlay();
 	if (overlay) {
 		overlay.appendChild(testComponent);
 	} else if (shadow) {

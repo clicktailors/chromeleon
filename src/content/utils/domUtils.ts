@@ -147,3 +147,23 @@ export function ensureShadowHost(hostId: string): { host: HTMLElement; shadow: S
 	}
 	return { host, shadow };
 }
+
+/**
+ * Chromeleon overlay host ID constant
+ */
+export const CHROMELEON_HOST_ID = 'chromeleon-root';
+
+/**
+ * Get the Chromeleon overlay container elements from shadow DOM
+ * Returns host, shadow root, and overlay element if they exist
+ */
+export function getChromeleonOverlay(): { 
+	host: HTMLElement | null; 
+	shadow: ShadowRoot | undefined; 
+	overlay: HTMLElement | undefined;
+} {
+	const host = document.getElementById(CHROMELEON_HOST_ID) as HTMLElement | null;
+	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
+	const overlay = shadow?.getElementById?.('overlay') as HTMLElement | undefined;
+	return { host, shadow, overlay };
+}

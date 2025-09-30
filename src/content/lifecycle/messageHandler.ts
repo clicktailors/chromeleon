@@ -1,5 +1,6 @@
 import { ThemeManager } from '../theming/themeManager';
 import type { ChromeleonMessage } from '../types';
+import { getChromeleonOverlay } from '../utils/domUtils';
 
 /**
  * Message handler for Chrome extension communication
@@ -67,9 +68,7 @@ export class MessageHandler {
 			await this.themeManager.updateTheme(message.settings);
 			// Update overlay backdrop mode immediately when settings change
 			try {
-				const host = document.getElementById('chromeleon-root') as HTMLElement | null;
-				const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
-				const overlayEl = shadow?.getElementById('overlay');
+				const { overlay: overlayEl } = getChromeleonOverlay();
 				if (overlayEl) {
 					const st: any = message.settings;
 					const mode = st.mode || 'system';

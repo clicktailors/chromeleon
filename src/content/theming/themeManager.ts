@@ -1,5 +1,5 @@
 import { setDaisyUITheme } from './cssInjector';
-import { applyGentleTheme } from './themeApplicators';
+import { toggleTestPane } from '../utils/testPane';
 import { StorageManager } from '../storage/storageManager';
 import type { ThemeSettings, ExtensionState } from '../types';
 import { ensureOverlay, hideOverlay, showOverlay } from '../ui/overlay';
@@ -125,8 +125,8 @@ export class ThemeManager {
 		// Set DaisyUI theme attribute on overlay host
 		setDaisyUITheme(effectiveTheme);
 
-		// Apply theme (single mode)
-		applyGentleTheme(effectiveTheme, this.state.currentTheme.showTestPane);
+		// Toggle test pane visibility
+		toggleTestPane(effectiveTheme, this.state.currentTheme.showTestPane);
 	}
 
 	/**

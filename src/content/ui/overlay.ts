@@ -1,11 +1,9 @@
-import { ensureShadowHost } from "../utils/domUtils";
+import { ensureShadowHost, CHROMELEON_HOST_ID } from "../utils/domUtils";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { getRoot, setRoot, clearRoot } from "@/content/utils/rootRegistry";
 import { chromeStorage } from "@/utils/chromeApi";
 import { OverlayApp } from "./OverlayApp";
-
-const HOST_ID = "chromeleon-root";
 
 export function ensureOverlay(): {
 	host: HTMLElement;
@@ -13,7 +11,7 @@ export function ensureOverlay(): {
 	mount: HTMLElement;
 } {
 	console.log("Ensuring overlay exists...");
-	const { host, shadow } = ensureShadowHost(HOST_ID);
+	const { host, shadow } = ensureShadowHost(CHROMELEON_HOST_ID);
 	console.log("Host:", host, "Shadow:", shadow);
 
 	// Prevent background page from scrolling while overlay is active
@@ -133,7 +131,7 @@ export function ensureOverlay(): {
  */
 export function hideOverlay(): void {
 	console.log("Hiding overlay...");
-	const host = document.getElementById(HOST_ID) as HTMLElement | null;
+	const host = document.getElementById(CHROMELEON_HOST_ID) as HTMLElement | null;
 	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
 
 	if (!host || !shadow) {
@@ -175,7 +173,7 @@ export function hideOverlay(): void {
  * Render the React overlay app
  */
 export function renderOverlayApp(): void {
-	const host = document.getElementById(HOST_ID) as HTMLElement | null;
+	const host = document.getElementById(CHROMELEON_HOST_ID) as HTMLElement | null;
 	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
 
 	if (!host || !shadow) {
@@ -213,7 +211,7 @@ export function renderOverlayApp(): void {
  * Show the overlay when extension is enabled
  */
 export function showOverlay(): void {
-	const host = document.getElementById(HOST_ID) as HTMLElement | null;
+	const host = document.getElementById(CHROMELEON_HOST_ID) as HTMLElement | null;
 	const shadow = (host as any)?.shadowRoot as ShadowRoot | undefined;
 
 	if (!host || !shadow) {
