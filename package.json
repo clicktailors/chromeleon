@@ -1,17 +1,14 @@
 {
 	"name": "chromeleon",
 	"private": true,
-	"version": "0.0.0",
+	"version": "2.0.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"dev:popup": "vite dev.html",
-		"dev:full": "vite --port 3000 --host",
-		"dev:extension": "vite",
-		"watch": "vite build --watch",
 		"build": "tsc && vite build",
-		"preview": "vite preview",
-		"build:extension": "vite build",
+		"watch": "vite build --watch",
+		"test": "vite build && node test/e2e.mjs",
+		"fixtures": "node test/serve.mjs",
 		"generate-icons": "node scripts/generate-icons.js"
 	},
 	"dependencies": {
@@ -28,6 +25,7 @@
 		"@vitejs/plugin-react": "^4.1.1",
 		"autoprefixer": "^10.4.16",
 		"daisyui": "^5.0.46",
+		"playwright-core": "^1.56.1",
 		"postcss": "^8.4.31",
 		"sharp": "^0.34.2",
 		"tailwindcss": "^3.4.17",

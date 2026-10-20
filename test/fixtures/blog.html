@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Setting up a reptile terrarium in a weekend – Scales &amp; Tails</title>
+<style>
+	body { background: #eef; font-family: Verdana; font-size: 12px; }
+	#page { width: 1100px; margin: 0 auto; background: #fff; }
+	#content { display: flex; }
+	#primary { flex: 1; padding: 20px; }
+	#secondary { width: 320px; background: #f6f6ff; padding: 20px; }
+	.entry-content p { color: #888; }
+	pre { background: #272822; color: #f8f8f2; }
+	.hljs-keyword { color: #f92672; }
+</style></head>
+<body class="post-template-default single">
+<div id="page" class="site">
+	<header id="masthead" class="site-header"><div class="site-branding"><p class="site-title"><a href="/">Scales &amp; Tails</a></p><p class="site-description">A blog about cold-blooded friends</p></div>
+		<nav id="site-navigation" class="main-navigation"><ul><li><a href="/">Home</a></li><li><a href="/">Care guides</a></li><li><a href="/">Shop</a></li><li><a href="/">About</a></li></ul></nav></header>
+	<div id="content" class="site-content">
+		<div id="primary" class="content-area"><main id="main" class="site-main">
+			<article id="post-42" class="post-42 post type-post hentry">
+				<header class="entry-header"><h1 class="entry-title">Setting up a reptile terrarium in a weekend</h1><div class="entry-meta">Posted on <time>March 3</time> by <a href="/">Sam</a></div></header>
+				<div class="entry-content">
+					<p style="font-size:11px;color:#aaa">Building a terrarium sounds like a big project, but most of the work is planning. If you know your animal's temperature range, humidity needs and how much it likes to climb, the shopping list almost writes itself.</p>
+					<p>Start with the enclosure. Glass is easy to clean and holds humidity well; screen enclosures breathe better and suit species from dry, airy habitats. Front-opening doors are worth paying for, since lizards tend to read anything coming from above as a predator.</p>
+					<h2>Heat and light</h2>
+					<p>Reptiles regulate their temperature by moving between warm and cool spots, so you need a gradient, not one even temperature. A basking lamp at one end and nothing at the other is the simplest way to get it.</p>
+					<table><thead><tr><th>Species</th><th>Basking °C</th><th>Humidity</th></tr></thead><tbody><tr><td>Veiled chameleon</td><td>32</td><td>50–70%</td></tr><tr><td>Leopard gecko</td><td>33</td><td>30–40%</td></tr><tr><td>Crested gecko</td><td>26</td><td>60–80%</td></tr></tbody></table>
+					<p>Use a thermostat on every heat source. Thermometers tell you something has gone wrong; thermostats stop it going wrong in the first place, and they are cheap compared to a vet bill.</p>
+					<blockquote><p>The best enclosure is the one you can keep clean without dreading it.</p></blockquote>
+					<h2>Automating the misting</h2>
+					<p>If you're comfortable with a microcontroller, a humidity sensor and a small pump will keep things steady. Here is the core loop I use:</p>
+					<pre><code><span class="hljs-keyword">while</span> (true) {
+  <span class="hljs-keyword">if</span> (humidity() &lt; 55) mist(3000);
+  sleep(60_000);
+}</code></pre>
+					<ul><li>Substrate: coco fibre or bioactive soil</li><li>Plants: pothos, ficus, bromeliads</li><li>Water: dripper for chameleons, dish for most others</li></ul>
+					<p>Give the setup a few days to stabilise before the animal moves in. Watch the readings at different times of day, and adjust the lamp height before you adjust anything else.</p>
+				</div>
+				<footer class="entry-footer"><span class="cat-links">Posted in <a href="/">Guides</a></span> <span class="tags-links">Tagged <a href="/">diy</a>, <a href="/">heat</a></span></footer>
+			</article>
+			<nav class="navigation post-navigation"><a href="/">← Previous post</a> <a href="/">Next post →</a></nav>
+		</main></div>
+		<aside id="secondary" class="widget-area"><section class="widget"><h2 class="widget-title">Recent posts</h2><ul><li><a href="/">Gecko diets</a></li><li><a href="/">UVB bulbs compared</a></li><li><a href="/">Shedding problems</a></li></ul></section><section class="widget"><h2>Archives</h2><ul><li><a href="/">February</a></li><li><a href="/">January</a></li></ul></section></aside>
+	</div>
+	<footer id="colophon" class="site-footer">Proudly powered by a blog engine</footer>
+</div>
+</body></html>
