@@ -85,7 +85,7 @@ jspm_packages/
 
 # Gatsby files
 .cache/
-public
+# (public/ is NOT ignored: it holds the extension icons the build needs)
 
 # Storybook build outputs
 .out

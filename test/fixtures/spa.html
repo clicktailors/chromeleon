@@ -1,0 +1,27 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Lizard Reader</title>
+<style> body { margin:0; font-family: sans-serif; } .shell { display:grid; grid-template-columns: 240px 1fr; } .nav { background:#123; color:#fff; min-height:100vh; } .nav a { color:#9cf; display:block; padding:8px; } </style></head>
+<body><div id="app"><div class="shell"><div class="nav">Loading…</div><div class="view"></div></div></div>
+<script>
+const stories = {
+	'/spa/1': ['The Gecko That Walked on Glass', 'Geckos stick to smooth surfaces using millions of microscopic hairs on their toes, each splitting into hundreds of even smaller tips.'],
+	'/spa/2': ['Why Iguanas Sneeze', 'Marine iguanas sneeze to clear salt from glands near their nostrils, a neat trick for an animal that feeds in the sea.'],
+};
+function render() {
+	const [title, lead] = stories[location.pathname] || stories['/spa/1'];
+	document.title = title + ' — Lizard Reader';
+	const paras = Array.from({ length: 6 }, (_, i) => '<p>' + lead + ' Paragraph ' + (i + 1) + ' goes into more detail about how this works, what researchers measured, and why it matters for the animal in the wild, where every advantage counts.</p>').join('');
+	document.getElementById('app').innerHTML =
+		'<div class="shell"><div class="nav"><a href="/spa/1" data-link>Gecko</a><a href="/spa/2" data-link>Iguana</a><a href="/">Home</a><a href="/">Saved</a></div>' +
+		'<div class="view"><article id="story"><h1 id="spa-title">' + title + '</h1>' + paras + '<p><a href="/spa/2" data-link id="next-link">Next story →</a></p></article></div></div>';
+}
+document.addEventListener('click', (e) => {
+	const a = e.target.closest('a[data-link]');
+	if (!a) return;
+	e.preventDefault();
+	history.pushState({}, '', a.getAttribute('href'));
+	render();
+});
+window.addEventListener('popstate', render);
+setTimeout(render, 600); // pretend we're fetching
+</script></body></html>

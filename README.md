@@ -1,191 +1,64 @@
-# Chromeleon - Website Rethemer Chrome Extension
+# Chromeleon
 
-A powerful Chrome extension that allows you to fully retheme any website with custom styling, animations, and React-based controls. Built with React, TypeScript, Vite, and Framer Motion.
+A Chrome extension that turns articles into a clean, consistent reader view **as you browse**, without breaking the page. Images, buttons, forms, video, lazy loading and the site's own JavaScript keep working, because Chromeleon restyles the real page instead of copying its text somewhere else.
+
+## How it works
+
+Most reader modes (and the first version of this project) scrape the article into a separate view. That copy is dead: buttons don't do anything, images that load on scroll never arrive, and the site's scripts can't reach it.
+
+Chromeleon v2 leaves every element where it is:
+
+1. **Find the article** in the live DOM using Readability-style scoring (`src/engine/detect.ts`). It also finds the headline and lead image when they sit outside the article body.
+2. **Tag elements** with data attributes: the article (`data-chl-root`), its ancestors (`data-chl-path`), and everything else to hide (`data-chl-hide`).
+3. **Inject one stylesheet** (`src/engine/styles.ts`), scoped entirely under `html[data-chl-on]`. It flattens the ancestors' layout, hides the rest, and applies your font, size, width and colours to the article. Turning reader mode off just removes the attribute.
+4. **Keep up with the page** (`src/engine/engine.ts`): re-detect on single-page-app navigation or when the article is re-rendered, keep looking for content that loads late, hide ads and cookie banners that appear later, and let through popups you open yourself (like an image lightbox).
+
+Pages that aren't articles (web apps, homepages) are left alone in **Auto** mode. Set a site to **Always** to restyle it anyway.
 
 ## Features
 
-- **Complete Style Override**: Strips existing website styles and applies consistent theming
-- **Real-time Theme Controls**: Adjust colors, fonts, spacing, and animations on the fly
-- **Preset Themes**: Quick access to Dark, Light, Sepia, and High Contrast themes
-- **Reader Mode**: Transform any webpage into a clean, readable format
-- **Framer Motion Animations**: Smooth, beautiful animations throughout the interface
-- **Persistent Settings**: Your theme preferences are saved and synced across devices
-- **Overlay Mode**: Full-screen overlay controls for advanced theming
+- Five themes (Paper, Sepia, Mist, Night, Black), five font choices, and sliders for size, line spacing and column width. Changes apply live.
+- Per-site mode: Auto, Always or Never.
+- **Pick content area**: click the right element when detection gets a site wrong. It's saved per site.
+- **Hide elements**: click anything to hide it on that site from then on.
+- `Alt+Shift+R` toggles between reader view and the original page.
+- Toolbar badge shows when reader view is on.
+- The original layout doesn't flash on sites that were in reader view last time.
 
-## Tech Stack
+## Develop
 
-- **React 18** with TypeScript
-- **Vite** for fast development and building
-- **Tailwind CSS** for utility-first styling
-- **Framer Motion** for animations
-- **Chrome Extension Manifest v3**
-- **Chrome Storage API** for settings persistence
-
-## Project Structure
-
-```
-chromeleon/
-├── public/
-│   ├── manifest.json          # Chrome extension manifest
-│   └── popup.html             # Popup entry point
-├── src/
-│   ├── popup/                 # React popup UI
-│   │   ├── popup.tsx          # Main popup component
-│   │   └── popup.css          # Popup-specific styles
-│   ├── content/               # Content script logic
-│   │   ├── content.ts         # Main content script
-│   │   └── overlay.tsx        # React overlay component
-│   ├── background/            # Background service worker
-│   │   └── background.ts      # Extension lifecycle management
-│   ├── styles/                # Global styles
-│   │   └── content.css        # Injected website styles
-│   └── index.css              # Main CSS with Tailwind
-├── package.json
-├── vite.config.ts
-├── tsconfig.json
-├── tailwind.config.js
-└── postcss.config.js
+```bash
+npm install
+npm run build        # outputs dist/
+npm test             # builds, loads dist/ into Chromium, and checks every fixture
+npm run fixtures     # serves test/fixtures on http://127.0.0.1:8787 for manual poking
 ```
 
-## Installation & Development
+Load it in Chrome: `chrome://extensions` → enable Developer mode → **Load unpacked** → choose `dist/`.
 
-1. **Clone and install dependencies:**
-   ```bash
-   npm install
-   ```
+`npm test` needs a Chromium binary. It looks in `PLAYWRIGHT_BROWSERS_PATH` (default `/opt/pw-browsers`), or set `CHROMIUM_PATH`. Set `SHOTS_DIR` to save screenshots.
 
-2. **Start development server:**
-   ```bash
-   npm run dev
-   ```
+## Layout
 
-3. **Build for production:**
-   ```bash
-   npm run build
-   ```
-
-4. **Build extension:**
-   ```bash
-   npm run build:extension
-   ```
-
-5. **Load in Chrome:**
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked" and select the `dist` folder
-
-## Usage
-
-### Basic Theming
-1. Click the Chromeleon extension icon in your browser toolbar
-2. Choose from preset themes or customize colors, fonts, and spacing
-3. Changes are applied immediately to the current webpage
-
-### Advanced Controls
-- **Color Picker**: Adjust background, text, and accent colors
-- **Typography**: Change font family, border radius, and spacing
-- **Animations**: Toggle smooth transitions on/off
-- **Overlay Mode**: Access full-screen controls
-- **Reader Mode**: Transform the page into a clean reading experience
-
-### Keyboard Shortcuts
-- `Ctrl+Shift+L` (or `Cmd+Shift+L` on Mac): Toggle overlay mode
-- `Ctrl+Shift+R` (or `Cmd+Shift+R` on Mac): Toggle reader mode
-
-## API Reference
-
-### Content Script Messages
-
-The content script responds to these message types:
-
-```typescript
-// Update theme settings
-{
-  type: 'UPDATE_THEME',
-  settings: {
-    backgroundColor: string;
-    textColor: string;
-    accentColor: string;
-    fontFamily: string;
-    borderRadius: string;
-    spacing: string;
-    animations: boolean;
-  }
-}
-
-// Get current theme settings
-{
-  type: 'GET_THEME'
-}
-
-// Toggle overlay mode
-{
-  type: 'TOGGLE_OVERLAY',
-  active: boolean
-}
-
-// Replace page content (reader mode)
-{
-  type: 'REPLACE_CONTENT'
-}
+```
+src/
+  engine/        content script (no React, runs on every page) + background worker
+    detect.ts    finds the article in the live DOM
+    styles.ts    builds the scoped reader stylesheet
+    engine.ts    applies/removes reader mode, watches for changes, element picker wiring
+    picker.ts    point-and-click element picker
+  panel/         toolbar popup (React)
+  shared/        settings, themes, fonts, message types
+test/
+  fixtures/      news site, WordPress blog, SPA, dashboard app, 1990s table-layout essay
+  e2e.mjs        loads the extension in Chromium and checks each fixture
 ```
 
-### Theme Settings Interface
+The v1 overlay code (`src/content`, `src/components`, `src/popup` and friends) is still in the repo but is no longer built or type-checked. It can be deleted.
 
-```typescript
-interface ThemeSettings {
-  backgroundColor: string;    // CSS color value
-  textColor: string;         // CSS color value
-  accentColor: string;       // CSS color value
-  fontFamily: string;        // CSS font-family value
-  borderRadius: string;      // CSS border-radius value
-  spacing: string;           // CSS spacing value (em)
-  animations: boolean;       // Enable/disable transitions
-}
-```
+## Known gaps
 
-## Customization
-
-### Adding New Preset Themes
-
-Edit `src/popup/popup.tsx` and add to the `presetThemes` array:
-
-```typescript
-const presetThemes = [
-  // ... existing themes
-  { name: 'Custom', bg: '#your-color', text: '#your-color', accent: '#your-color' }
-];
-```
-
-### Custom CSS Injection
-
-Modify `src/styles/content.css` to add custom styles that will be injected into web pages.
-
-### Extending the Overlay
-
-Edit `src/content/overlay.tsx` to add new controls or modify the overlay interface.
-
-## Browser Compatibility
-
-- Chrome 88+ (Manifest v3 support)
-- Edge 88+ (Chromium-based)
-- Other Chromium-based browsers
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Built with [Vite](https://vitejs.dev/) for fast development
-- Styled with [Tailwind CSS](https://tailwindcss.com/)
-- Animated with [Framer Motion](https://www.framer.com/motion/)
-- Icons from [Heroicons](https://heroicons.com/)
+- Detection is heuristic. Use **Pick content area** for sites it gets wrong; that choice sticks.
+- "Always" mode on non-article pages only changes fonts (light themes) or uses an invert filter (dark themes); it doesn't fully re-theme complex apps.
+- Content inside iframes (some embeds) isn't restyled.
+- Only tested against local fixtures so far, not a sweep of real sites.

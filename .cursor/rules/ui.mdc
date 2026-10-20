@@ -1,22 +1,15 @@
 ---
 type: code
 globs:
-  - "src/**/*"
-  - "index.html"
-  - "*.html"
+  - "src/panel/**/*"
 description: >
-  UI implementation rules using Tailwind CSS and daisyUI with strict no-inline-styles policy.
+  Popup UI rules.
 alwaysApply: true
 ---
 
-# UI Component Rules
+# Popup UI rules
 
-- All visual components should be written in React with JSX.
-- Use Tailwind CSS utility classes and daisyUI elements.
-- **NEVER use inline styles** (`style="..."` or `style={{...}}`).
-- **NEVER manipulate `.style` properties** in JavaScript/TypeScript.
-- **NEVER use `cssText`** for dynamic styling.
-- Use CSS classes and Tailwind utilities for all styling needs.
-- Any third-party UI should be abstracted behind reusable internal components.
-- For dynamic styling, use conditional class names or CSS custom properties.
-- Prefer DaisyUI component classes (`btn`, `input`, `card`, etc.) over custom styling.
+- The popup is React with plain CSS in `src/panel/popup.css`; no UI framework.
+- Read and write settings only through helpers in `src/shared/settings.ts`.
+- Save slider values on release, not on every input event: `chrome.storage.sync` has a write quota.
+- Talk to the page only with the `ReaderMessage` types.

@@ -1,0 +1,184 @@
+import { useCallback, useEffect, useState } from 'react';
+import {
+	DEFAULT_SETTINGS,
+	FONTS,
+	THEMES,
+	clearSiteRule,
+	loadSettings,
+	saveSettings,
+	saveSiteRule,
+	type FontId,
+	type ReaderMessage,
+	type ReaderSettings,
+	type ReaderStatus,
+	type SiteMode,
+	type ThemeId,
+} from '@/shared/settings';
+
+async function activeTabId(): Promise<number | undefined> {
+	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	return tab?.id;
+}
+
+async function send(msg: ReaderMessage): Promise<ReaderStatus | null> {
+	const id = await activeTabId();
+	if (id === undefined) return null;
+	try {
+		return (await chrome.tabs.sendMessage(id, msg)) ?? null;
+	} catch {
+		// No content script: chrome:// pages, the Web Store, or a tab opened before install.
+		return null;
+	}
+}
+
+const SITE_MODES: { id: SiteMode; label: string; hint: string }[] = [
+	{ id: 'auto', label: 'Auto', hint: 'Reader view on articles only' },
+	{ id: 'on', label: 'Always', hint: 'Every page on this site' },
+	{ id: 'off', label: 'Never', hint: 'Leave this site alone' },
+];
+
+export function Popup() {
+	const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
+	const [status, setStatus] = useState<ReaderStatus | null>(null);
+	const [loaded, setLoaded] = useState(false);
+
+	const refresh = useCallback(async () => {
+		setStatus(await send({ type: 'chl:status' }));
+	}, []);
+
+	useEffect(() => {
+		void (async () => {
+			setSettings(await loadSettings());
+			await refresh();
+			setLoaded(true);
+		})();
+	}, [refresh]);
+
+	const patch = async (p: Partial<ReaderSettings>) => {
+		setSettings((s) => ({ ...s, ...p }));
+		await saveSettings(p);
+		// The content script reacts to storage changes; give it a beat before asking again.
+		setTimeout(refresh, 120);
+	};
+
+	const setSiteMode = async (mode: SiteMode) => {
+		if (!status) return;
+		await saveSiteRule(status.host, { mode });
+		setTimeout(refresh, 120);
+	};
+
+	const pick = async (mode: 'root' | 'hide') => {
+		await send({ type: 'chl:pick', mode });
+		window.close();
+	};
+
+	const resetSite = async () => {
+		if (!status) return;
+		await clearSiteRule(status.host);
+		setTimeout(refresh, 120);
+	};
+
+	const toggleNow = async () => setStatus(await send({ type: 'chl:toggle' }));
+
+	return (
+		<div className="popup">
+			<header className="top">
+				<img src="/icon48.png" alt="" width={22} height={22} />
+				<h1>Chromeleon</h1>
+				<label className="switch" title={settings.enabled ? 'Pause everywhere' : 'Resume'}>
+					<input type="checkbox" checked={settings.enabled} onChange={(e) => patch({ enabled: e.target.checked })} />
+					<span />
+				</label>
+			</header>
+
+			{loaded && !status ? (
+				<section className="card muted">Reader view isn't available on this page. Try reloading the tab if you just installed the extension.</section>
+			) : status ? (
+				<section className="card">
+					<div className="site-row">
+						<div>
+							<div className="host">{status.host}</div>
+							<div className={`reason ${status.applied ? 'on' : ''}`}>{status.reason}</div>
+						</div>
+						<button className="ghost" onClick={toggleNow}>{status.applied ? 'Show original' : 'Reader view'}</button>
+					</div>
+					<div className="segmented" role="radiogroup" aria-label="This site">
+						{SITE_MODES.map((m) => (
+							<button key={m.id} role="radio" aria-checked={status.mode === m.id} title={m.hint} className={status.mode === m.id ? 'active' : ''} onClick={() => setSiteMode(m.id)}>
+								{m.label}
+							</button>
+						))}
+					</div>
+					<div className="tools">
+						<button className="ghost" onClick={() => pick('root')}>Pick content area</button>
+						<button className="ghost" onClick={() => pick('hide')}>Hide elements</button>
+						{(status.hasCustomRoot || status.hiddenCount > 0 || status.mode !== 'auto') && (
+							<button className="ghost danger" onClick={resetSite}>Reset site</button>
+						)}
+					</div>
+				</section>
+			) : null}
+
+			<section className="card">
+				<div className="label">Theme</div>
+				<div className="swatches">
+					{(Object.keys(THEMES) as ThemeId[]).map((id) => (
+						<button
+							key={id}
+							className={`swatch ${settings.theme === id ? 'active' : ''}`}
+							style={{ background: THEMES[id].bg, color: THEMES[id].fg, borderColor: THEMES[id].border }}
+							onClick={() => patch({ theme: id })}
+							title={THEMES[id].label}
+						>
+							Aa
+						</button>
+					))}
+				</div>
+
+				<div className="label">Font</div>
+				<div className="fonts">
+					{(Object.keys(FONTS) as FontId[]).map((id) => (
+						<button key={id} className={settings.font === id ? 'active' : ''} style={{ fontFamily: FONTS[id].stack }} onClick={() => patch({ font: id })}>
+							{FONTS[id].label}
+						</button>
+					))}
+				</div>
+
+				<Slider label="Size" value={settings.fontSize} min={14} max={28} step={1} format={(v) => `${v}px`} onChange={(v) => patch({ fontSize: v })} />
+				<Slider label="Spacing" value={settings.lineHeight} min={1.3} max={2.1} step={0.05} format={(v) => v.toFixed(2)} onChange={(v) => patch({ lineHeight: v })} />
+				<Slider label="Width" value={settings.width} min={480} max={1100} step={20} format={(v) => `${v}px`} onChange={(v) => patch({ width: v })} />
+
+				<label className="check">
+					<input type="checkbox" checked={settings.hideImages} onChange={(e) => patch({ hideImages: e.target.checked })} />
+					Hide images
+				</label>
+			</section>
+
+			<footer className="foot">
+				<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> toggles reader view on any page
+			</footer>
+		</div>
+	);
+}
+
+function Slider(props: { label: string; value: number; min: number; max: number; step: number; format: (v: number) => string; onChange: (v: number) => void }) {
+	const [local, setLocal] = useState(props.value);
+	useEffect(() => setLocal(props.value), [props.value]);
+	return (
+		<label className="slider">
+			<span>{props.label}</span>
+			<input
+				type="range"
+				min={props.min}
+				max={props.max}
+				step={props.step}
+				value={local}
+				onChange={(e) => setLocal(Number(e.target.value))}
+				// Save on release; sync storage has a write quota.
+				onPointerUp={() => props.onChange(local)}
+				onKeyUp={() => props.onChange(local)}
+			/>
+			<output>{props.format(local)}</output>
+		</label>
+	);
+}

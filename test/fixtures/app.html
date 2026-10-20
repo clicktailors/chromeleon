@@ -1,0 +1,6 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Terrarium Dashboard</title>
+<style> body{margin:0;font-family:sans-serif;background:#f4f5f7} .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh} .side{background:#1e2430;color:#fff;padding:16px} .side a{color:#cfd8e3;display:block;padding:6px 0} .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:24px} .card{background:#fff;border-radius:8px;padding:16px} </style></head>
+<body><div class="app"><nav class="side"><a href="#">Overview</a><a href="#">Sensors</a><a href="#">Alerts</a><a href="#">Settings</a></nav>
+<main><div class="cards"><div class="card"><h3>Temperature</h3><p>31.2 °C</p></div><div class="card"><h3>Humidity</h3><p>62%</p></div><div class="card"><h3>Lamp</h3><p>On</p><button id="lamp">Turn off</button></div></div>
+<table><tr><th>Time</th><th>Event</th></tr><tr><td>09:00</td><td>Misting</td></tr><tr><td>12:00</td><td>Lamp on</td></tr></table></main></div></body></html>

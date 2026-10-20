@@ -21,6 +21,6 @@
 		},
 		"types": ["chrome"]
 	},
-	"include": ["src"],
+	"include": ["src/engine", "src/panel", "src/shared"],
 	"references": [{ "path": "./tsconfig.node.json" }]
 } 
