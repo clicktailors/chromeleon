@@ -17,7 +17,8 @@ Pages that aren't articles (web apps, homepages) are left alone in **Auto** mode
 
 ## Features
 
-- Five themes (Paper, Sepia, Mist, Night, Black), five font choices, and sliders for size, line spacing and column width. Changes apply live.
+- Naamia's theme engine: choose System, Light or Dark, and pick one palette for each mode (Sepia by day, Dracula by night). There are 40 palettes: five built for reading, Naamia's Default, Retro and Nautical, and 32 daisyUI themes. Every text colour is pushed to at least 4.5:1 contrast, and `npm run check:palettes` fails if one drops below.
+- Five font choices, and sliders for size, line spacing and column width. Changes apply live.
 - Per-site mode: Auto, Always or Never.
 - **Pick content area**: click the right element when detection gets a site wrong. It's saved per site.
 - **Hide elements**: click anything to hide it on that site from then on.
@@ -30,7 +31,8 @@ Pages that aren't articles (web apps, homepages) are left alone in **Auto** mode
 ```bash
 npm install
 npm run build        # outputs dist/
-npm test             # builds, loads dist/ into Chromium, and checks every fixture
+npm test             # checks palette contrast, builds, loads dist/ into Chromium, checks every fixture
+npm run check:palettes  # palette contrast only
 npm run fixtures     # serves test/fixtures on http://127.0.0.1:8787 for manual poking
 ```
 
@@ -48,7 +50,9 @@ src/
     engine.ts    applies/removes reader mode, watches for changes, element picker wiring
     picker.ts    point-and-click element picker
   panel/         toolbar popup (React)
-  shared/        settings, themes, fonts, message types
+  shared/        settings, fonts, message types
+    palettes.ts  palette catalog and contrast rules (ported from Naamia)
+    themes/      OKLCH colour maths and the vendored daisyUI themes, copied from Naamia
 test/
   fixtures/      news site, WordPress blog, SPA, dashboard app, 1990s table-layout essay
   e2e.mjs        loads the extension in Chromium and checks each fixture
