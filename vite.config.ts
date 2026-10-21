@@ -11,8 +11,6 @@ export default defineConfig({
 			'@': resolve(__dirname, 'src'),
 		},
 	},
-	// Ignore the old Tailwind postcss.config.js; nothing here uses it.
-	css: { postcss: {} },
 	build: {
 		outDir: 'dist',
 		emptyOutDir: true,

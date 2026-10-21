@@ -58,8 +58,6 @@ test/
   e2e.mjs        loads the extension in Chromium and checks each fixture
 ```
 
-The v1 overlay code (`src/content`, `src/components`, `src/popup` and friends) is still in the repo but is no longer built or type-checked. It can be deleted.
-
 ## Known gaps
 
 - Detection is heuristic. Use **Pick content area** for sites it gets wrong; that choice sticks.
