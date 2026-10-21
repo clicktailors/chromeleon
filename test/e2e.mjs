@@ -73,6 +73,14 @@ const sendToTab = (page, msg) =>
 		},
 		[msg, new URL(page.url()).hostname],
 	);
+// Chrome reports palette colours as oklch(); paint one pixel to get sRGB.
+const PIXEL = `(color) => { const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d'); x.fillStyle = color; x.fillRect(0, 0, 1, 1); return [...x.getImageData(0, 0, 1, 1).data].slice(0, 3); }`;
+const rgb = (page, sel, prop) => page.evaluate(([s, p, px]) => eval(px)(getComputedStyle(document.querySelector(s))[p]), [sel, prop, PIXEL]);
+const varRgb = (page, name) => page.evaluate(([n, px]) => eval(px)(getComputedStyle(document.documentElement).getPropertyValue(n).trim()), [name, PIXEL]);
+const near = (a, b, tol = 2) => a.every((v, i) => Math.abs(v - b[i]) <= tol);
+const isDark = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b < 80;
+const setReader = (value) => storage((v) => chrome.storage.sync.set({ reader: v }), value);
+
 const snap = async (page, name) => shots && page.screenshot({ path: path.join(shots, `${name}.png`) });
 
 async function open(host, p) {
@@ -95,7 +103,8 @@ console.log('news.test (typical news article)');
 	check('cookie banner injected later is hidden', !(await visible(page, '#cookie')));
 	check('ad injected later is hidden', !(await visible(page, '#late-ad')));
 	check('body text uses reader size', (await style(page, '#body p', 'fontSize')) === '19px');
-	check('body text uses theme colour', (await style(page, '#body p', 'color')) === 'rgb(38, 36, 31)');
+	check('body text uses the palette colour', near(await rgb(page, '#body p', 'color'), await varRgb(page, '--chl-fg')));
+	check('default palette is Paper in light mode', near(await rgb(page, 'body', 'backgroundColor'), [251, 250, 247]));
 	check('column is constrained', (await page.evaluate(() => document.querySelector('#body').getBoundingClientRect().width)) <= 700);
 
 	await snap(page, 'news-reader');
@@ -118,11 +127,27 @@ console.log('news.test (typical news article)');
 	await sendToTab(page, { type: 'chl:toggle' });
 	check('shortcut toggle restores reader mode', (await mode(page)) === 'reader');
 
-	await storage(() => chrome.storage.sync.set({ reader: { theme: 'night', font: 'sans', fontSize: 20, lineHeight: 1.7, width: 720, enabled: true, hideImages: false } }));
+	await setReader({ mode: 'dark', paletteDark: 'dracula', paletteLight: 'paper', font: 'sans', fontSize: 20, lineHeight: 1.7, width: 720, enabled: true, hideImages: false });
 	await page.waitForTimeout(300);
-	check('theme change applies live', (await style(page, 'body', 'backgroundColor')) === 'rgb(28, 30, 34)');
+	const dracula = await rgb(page, 'body', 'backgroundColor');
+	check('pinning dark mode shows the dark palette (Dracula)', isDark(dracula) && near(dracula, await varRgb(page, '--chl-bg')));
 	check('font size change applies live', (await style(page, '#body p', 'fontSize')) === '20px');
-	await snap(page, 'news-night');
+	await snap(page, 'news-dracula');
+
+	await setReader({ mode: 'system', paletteDark: 'synthwave', paletteLight: 'retro' });
+	await page.emulateMedia({ colorScheme: 'dark' });
+	await page.waitForTimeout(200);
+	check('system mode follows the OS: dark → dark palette', isDark(await rgb(page, 'body', 'backgroundColor')));
+	await snap(page, 'news-synthwave');
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.waitForTimeout(200);
+	const retro = await rgb(page, 'body', 'backgroundColor');
+	check('system mode follows the OS: light → light palette (Retro)', !isDark(retro) && near(retro, await varRgb(page, '--chl-bg')));
+	await snap(page, 'news-retro');
+
+	await setReader({ theme: 'sepia' });
+	await page.waitForTimeout(300);
+	check('old single-theme setting migrates (sepia)', near(await rgb(page, 'body', 'backgroundColor'), [244, 236, 216]));
 	await storage(() => chrome.storage.sync.remove('reader'));
 
 	await storage(() => chrome.storage.sync.set({ 'site:news.test': { hide: ['#inline-img'] } }));

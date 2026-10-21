@@ -1,4 +1,6 @@
-import { FONTS, THEMES, type ReaderSettings, type SiteRule } from '@/shared/settings';
+import { FONTS, type ReaderSettings, type SiteRule } from '@/shared/settings';
+import { paletteTokens, type ColorMode, type ReaderTokens } from '@/shared/palettes';
+import { toCss } from '@/shared/themes/color';
 
 // All rules are scoped under attributes the engine sets on <html>, so the
 // stylesheet is inert until reader mode is applied and vanishes when it's removed.
@@ -14,29 +16,33 @@ const W = 'html[data-chl-on][data-chl-mode="whole"]';
 
 const CONTROLS = 'button, [role="button"], input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="image"], [type="color"]), select, textarea';
 
+const MEDIA: Record<ColorMode, string> = {
+	light: '(prefers-color-scheme: light)',
+	dark: '(prefers-color-scheme: dark)',
+};
+
 export function buildStylesheet(settings: ReaderSettings, rule: SiteRule): string {
-	const t = THEMES[settings.theme] ?? THEMES.paper;
 	const font = FONTS[settings.font]?.stack ?? FONTS.serif.stack;
 	const mono = FONTS.mono.stack;
 
-	const vars = `
+	const layout = `
 ${ON} {
-	--chl-bg: ${t.bg};
-	--chl-fg: ${t.fg};
-	--chl-muted: ${t.muted};
-	--chl-heading: ${t.heading};
-	--chl-accent: ${t.accent};
-	--chl-surface: ${t.surface};
-	--chl-border: ${t.border};
-	--chl-code-bg: ${t.codeBg};
-	--chl-selection: ${t.selection};
 	--chl-font: ${font};
 	--chl-mono: ${mono};
 	--chl-size: ${settings.fontSize}px;
 	--chl-lh: ${settings.lineHeight};
 	--chl-width: ${settings.width}px;
-}
-${R} { color-scheme: ${t.scheme}; }`;
+}`;
+
+	// Each mode's palette, either pinned or switched by the OS setting, as in Naamia.
+	const modes: ColorMode[] = settings.mode === 'system' ? ['light', 'dark'] : [settings.mode];
+	const colours = modes
+		.map((mode) => {
+			const id = mode === 'light' ? settings.paletteLight : settings.paletteDark;
+			const css = `${ON} { ${colourVars(paletteTokens(mode, id))} }\n${R} { color-scheme: ${mode}; }\n${whole(mode)}`;
+			return settings.mode === 'system' ? `@media ${MEDIA[mode]} {\n${css}\n}` : css;
+		})
+		.join('\n');
 
 	const userHides = (rule.hide ?? []).filter(isValidSelector);
 	const userHideCss = userHides.length ? `${ON} :is(${userHides.join(', ')}) { display: none !important; }` : '';
@@ -45,7 +51,22 @@ ${R} { color-scheme: ${t.scheme}; }`;
 		? `${S} :where(img, picture, figure, video) { display: none !important; }`
 		: '';
 
-	return [vars, common, reader, whole(t.scheme === 'dark'), hideImages, userHideCss].join('\n');
+	return [layout, colours, common, reader, wholeFonts, hideImages, userHideCss].join('\n');
+}
+
+function colourVars(t: ReaderTokens): string {
+	const vars: [string, ReaderTokens[keyof ReaderTokens]][] = [
+		['bg', t.background],
+		['fg', t.foreground],
+		['muted', t.muted],
+		['heading', t.heading],
+		['accent', t.accent],
+		['surface', t.surface],
+		['border', t.border],
+		['code-bg', t.codeBg],
+		['selection', t.selection],
+	];
+	return vars.map(([k, v]) => `--chl-${k}: ${toCss(v)};`).join(' ');
 }
 
 function isValidSelector(sel: string): boolean {
@@ -225,23 +246,25 @@ ${S} :is(button, [role="button"]):hover { border-color: var(--chl-accent) !impor
 ${S} :is(${CONTROLS}):focus-visible { outline: 2px solid var(--chl-accent) !important; outline-offset: 2px !important; }
 `;
 
-// "Whole page" mode: no layout changes, just type and an optional dark filter.
-// Used when a site is forced on but no article can be found (apps, homepages).
-function whole(dark: boolean): string {
-	const fonts = `
+// "Whole page" mode: no layout changes, just type and colour. Used when a
+// site is forced on but no article can be found (apps, homepages).
+const wholeFonts = `
 ${W} body :where(p, li, dd, dt, blockquote, td, th, span, a, label, h1, h2, h3, h4, h5, h6, div, article, section) {
 	font-family: var(--chl-font) !important;
 }
 `;
-	if (!dark) {
-		return `${fonts}
+
+function whole(mode: ColorMode): string {
+	if (mode === 'light') {
+		return `
 ${W}, ${W} body { background-color: var(--chl-bg) !important; }
 ${W} body a { color: var(--chl-accent) !important; }
 `;
 	}
-	// Invert-and-rotate is crude but keeps every widget working; media is
-	// flipped back so photos look normal.
-	return `${fonts}
+	// A light site can't be re-coloured element by element, so dark palettes
+	// invert it. Crude, but every widget keeps working; media is flipped back
+	// so photos look normal.
+	return `
 ${W} { filter: invert(0.9) hue-rotate(180deg) !important; background: #fff !important; }
 ${W} :is(img, video, picture, canvas, iframe, [style*="background-image"]) { filter: invert(1) hue-rotate(180deg) !important; }
 `;

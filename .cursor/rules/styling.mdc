@@ -10,7 +10,9 @@ alwaysApply: true
 # Reader stylesheet rules
 
 - All page styling lives in `src/engine/styles.ts` and is generated from `ReaderSettings`.
-- Theme values are CSS custom properties (`--chl-*`) set on `html[data-chl-on]`; don't hard-code colours in rules.
+- Colours come from palettes in `src/shared/palettes.ts` (OKLCH data, ported from Naamia) and reach CSS as `--chl-*` custom properties; don't hard-code colours in rules.
+- New palettes must pass `npm run check:palettes` (4.5:1 for every text pair). Use `ensureContrast` rather than hand-tuning.
+- `src/shared/themes/color.ts` and `daisyui.ts` are copied from Naamia's `packages/shared/src/themes/`; change them there first so the two stay in step.
 - Use `!important` on properties we override; site CSS would win otherwise.
 - Don't override `display`, `position` or sizing inside the article except where listed in styles.ts; widgets depend on them.
 - Keep colours that carry meaning (syntax highlighting, `mark`, form controls' states).

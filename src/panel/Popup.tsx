@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
 	DEFAULT_SETTINGS,
 	FONTS,
-	THEMES,
 	clearSiteRule,
 	loadSettings,
 	saveSettings,
@@ -11,9 +10,10 @@ import {
 	type ReaderMessage,
 	type ReaderSettings,
 	type ReaderStatus,
+	type ModePreference,
 	type SiteMode,
-	type ThemeId,
 } from '@/shared/settings';
+import { palettesFor, swatch, type ColorMode } from '@/shared/palettes';
 
 async function activeTabId(): Promise<number | undefined> {
 	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -35,6 +35,12 @@ const SITE_MODES: { id: SiteMode; label: string; hint: string }[] = [
 	{ id: 'auto', label: 'Auto', hint: 'Reader view on articles only' },
 	{ id: 'on', label: 'Always', hint: 'Every page on this site' },
 	{ id: 'off', label: 'Never', hint: 'Leave this site alone' },
+];
+
+const COLOR_MODES: { id: ModePreference; label: string }[] = [
+	{ id: 'system', label: 'System' },
+	{ id: 'light', label: 'Light' },
+	{ id: 'dark', label: 'Dark' },
 ];
 
 export function Popup() {
@@ -120,20 +126,23 @@ export function Popup() {
 			) : null}
 
 			<section className="card">
-				<div className="label">Theme</div>
-				<div className="swatches">
-					{(Object.keys(THEMES) as ThemeId[]).map((id) => (
-						<button
-							key={id}
-							className={`swatch ${settings.theme === id ? 'active' : ''}`}
-							style={{ background: THEMES[id].bg, color: THEMES[id].fg, borderColor: THEMES[id].border }}
-							onClick={() => patch({ theme: id })}
-							title={THEMES[id].label}
-						>
-							Aa
+				<div className="label">Colour</div>
+				<div className="segmented" role="radiogroup" aria-label="Colour mode">
+					{COLOR_MODES.map((m) => (
+						<button key={m.id} role="radio" aria-checked={settings.mode === m.id} className={settings.mode === m.id ? 'active' : ''} onClick={() => patch({ mode: m.id })}>
+							{m.label}
 						</button>
 					))}
 				</div>
+				{(['light', 'dark'] as ColorMode[]).map((mode) => (
+					<PalettePicker
+						key={mode}
+						mode={mode}
+						value={mode === 'light' ? settings.paletteLight : settings.paletteDark}
+						dimmed={settings.mode !== 'system' && settings.mode !== mode}
+						onChange={(id) => patch(mode === 'light' ? { paletteLight: id } : { paletteDark: id })}
+					/>
+				))}
 
 				<div className="label">Font</div>
 				<div className="fonts">
@@ -157,6 +166,38 @@ export function Popup() {
 			<footer className="foot">
 				<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> toggles reader view on any page
 			</footer>
+		</div>
+	);
+}
+
+function PalettePicker(props: { mode: ColorMode; value: string; dimmed: boolean; onChange: (id: string) => void }) {
+	const palettes = palettesFor(props.mode);
+	const current = palettes.find((p) => p.id === props.value);
+	return (
+		<div className={`palettes ${props.dimmed ? 'dimmed' : ''}`}>
+			<div className="palette-head">
+				<span>{props.mode === 'light' ? 'Light palette' : 'Dark palette'}</span>
+				<span className="palette-name">{current?.label}</span>
+			</div>
+			<div className="palette-grid" role="radiogroup" aria-label={`${props.mode} palette`}>
+				{palettes.map((p) => {
+					const c = swatch(p.tokens[props.mode]!);
+					return (
+						<button
+							key={p.id}
+							role="radio"
+							aria-checked={p.id === props.value}
+							aria-label={p.label}
+							title={p.label}
+							className={`palette ${p.id === props.value ? 'active' : ''}`}
+							style={{ background: c.bg, color: c.fg }}
+							onClick={() => props.onChange(p.id)}
+						>
+							Aa<i style={{ background: c.accent }} />
+						</button>
+					);
+				})}
+			</div>
 		</div>
 	);
 }
