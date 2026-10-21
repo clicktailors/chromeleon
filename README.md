@@ -1,3 +1,5 @@
+<p align="center"><img src="icons/chameleon.png" alt="" width="128" height="128"></p>
+
 # Chromeleon
 
 A Chrome extension that turns articles into a clean, consistent reader view **as you browse**, without breaking the page. Images, buttons, forms, video, lazy loading and the site's own JavaScript keep working, because Chromeleon restyles the real page instead of copying its text somewhere else.
@@ -23,7 +25,7 @@ Pages that aren't articles (web apps, homepages) are left alone in **Auto** mode
 - **Pick content area**: click the right element when detection gets a site wrong. It's saved per site.
 - **Hide elements**: click anything to hide it on that site from then on.
 - `Alt+Shift+R` toggles between reader view and the original page.
-- Toolbar badge shows when reader view is on.
+- The toolbar chameleon is muted until reader view takes over a page, then turns green.
 - The original layout doesn't flash on sites that were in reader view last time.
 
 ## Develop

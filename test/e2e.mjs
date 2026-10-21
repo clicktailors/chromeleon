@@ -49,6 +49,13 @@ const ctx = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.t
 });
 const sw = ctx.serviceWorkers()[0] ?? (await ctx.waitForEvent('serviceworker'));
 const extId = new URL(sw.url()).host;
+// The worker can be reachable a moment before Chrome binds the extension
+// APIs to it, so poll from here until they exist.
+for (let i = 0; i < 100; i++) {
+	const ready = await sw.evaluate(() => Boolean(globalThis.chrome?.action && globalThis.chrome?.storage)).catch(() => false);
+	if (ready) break;
+	await new Promise((r) => setTimeout(r, 50));
+}
 
 const storage = (fn, arg) => sw.evaluate(fn, arg);
 const visible = (page, sel) =>
@@ -88,6 +95,14 @@ async function open(host, p) {
 	await page.goto(url(host, p));
 	await page.waitForTimeout(400);
 	return page;
+}
+
+console.log('toolbar icon');
+for (const suffix of ['', '-off']) {
+	const ok = await sw
+		.evaluate((sfx) => chrome.action.setIcon({ path: { 16: `/icon16${sfx}.png`, 32: `/icon32${sfx}.png`, 48: `/icon48${sfx}.png` } }).then(() => true, () => false), suffix)
+		.catch(() => false);
+	check(`${suffix ? 'muted' : 'colour'} toolbar icons load`, ok);
 }
 
 // ── News site: grid layout, fixed header, sidebar, junk inside the article ──

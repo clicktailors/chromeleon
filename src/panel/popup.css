@@ -4,8 +4,9 @@
 	--fg: #1f1e1b;
 	--muted: #6f6b62;
 	--line: #e3dfd5;
-	--accent: #3f7d4e;
-	--accent-soft: #e3efe5;
+	/* Greens from the chameleon icon, deepened in light mode to stay readable as text. */
+	--accent: #0b7a52;
+	--accent-soft: #e2f5e5;
 	--danger: #b3402f;
 	color-scheme: light dark;
 }
@@ -16,8 +17,8 @@
 		--fg: #e6e3dc;
 		--muted: #9b978e;
 		--line: #34373b;
-		--accent: #7cc08d;
-		--accent-soft: #263a2c;
+		--accent: #59c36a;
+		--accent-soft: #23382a;
 		--danger: #e48a7a;
 	}
 }
