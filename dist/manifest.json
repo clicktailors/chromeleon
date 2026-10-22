@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "Chromeleon",
+  "version": "2.0.0",
+  "description": "A reader view that stays on as you browse, and keeps images, buttons and page scripts working.",
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "contextMenus"
+  ],
+  "action": {
+    "default_popup": "src/panel/popup.html",
+    "default_title": "Chromeleon",
+    "default_icon": {
+      "16": "icon16-off.png",
+      "32": "icon32-off.png",
+      "48": "icon48-off.png"
+    }
+  },
+  "commands": {
+    "toggle-reader": {
+      "suggested_key": {
+        "default": "Alt+Shift+R"
+      },
+      "description": "Switch this page between reader view, theme only and off"
+    }
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "assets/index.ts-loader-ea36cd7b.js"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "resources": [
+        "assets/settings-058e4301.js",
+        "assets/index.ts-021d2dcb.js"
+      ],
+      "use_dynamic_url": false
+    }
+  ]
+}
