@@ -11,6 +11,7 @@ import {
 	type ReaderSettings,
 	type ReaderStatus,
 	type ModePreference,
+	type PageState,
 	type SiteMode,
 } from '@/shared/settings';
 import { palettesFor, swatch, type ColorMode } from '@/shared/palettes';
@@ -31,10 +32,13 @@ async function send(msg: ReaderMessage): Promise<ReaderStatus | null> {
 	}
 }
 
-const SITE_MODES: { id: SiteMode; label: string; hint: string }[] = [
-	{ id: 'auto', label: 'Auto', hint: 'Reader view on articles only' },
-	{ id: 'on', label: 'Always', hint: 'Every page on this site' },
-	{ id: 'off', label: 'Never', hint: 'Leave this site alone' },
+// Each mode wears the colour the toolbar chameleon turns when it's in effect,
+// so the popup teaches what the icon means.
+const SITE_MODES: { id: SiteMode; label: string; hint: string; state: PageState | null }[] = [
+	{ id: 'auto', label: 'Auto', hint: 'Reader view on articles, otherwise leave the page alone', state: null },
+	{ id: 'reader', label: 'Reader', hint: 'Reader view on every page; theme only where there is no article', state: 'reader' },
+	{ id: 'theme', label: 'Theme', hint: 'Fonts and colours only; the layout stays as it is', state: 'theme' },
+	{ id: 'off', label: 'Off', hint: 'Leave this site alone', state: 'off' },
 ];
 
 const COLOR_MODES: { id: ModePreference; label: string }[] = [
@@ -89,7 +93,7 @@ export function Popup() {
 	return (
 		<div className="popup">
 			<header className="top">
-				<img src={status?.applied ? '/icon48.png' : '/icon48-off.png'} alt="" width={24} height={24} />
+				<img src={`/icon48-${status?.state ?? (settings.enabled ? 'off' : 'paused')}.png`} alt="" width={24} height={24} />
 				<h1>Chromeleon</h1>
 				<label className="switch" title={settings.enabled ? 'Pause everywhere' : 'Resume'}>
 					<input type="checkbox" checked={settings.enabled} onChange={(e) => patch({ enabled: e.target.checked })} />
@@ -104,20 +108,25 @@ export function Popup() {
 					<div className="site-row">
 						<div>
 							<div className="host">{status.host}</div>
-							<div className={`reason ${status.applied ? 'on' : ''}`}>{status.reason}</div>
+							<div className={`reason state-${status.state}`}>{status.reason}</div>
 						</div>
 						<button className="ghost" onClick={toggleNow}>{status.applied ? 'Show original' : 'Reader view'}</button>
 					</div>
-					<div className="segmented" role="radiogroup" aria-label="This site">
+					<div className="segmented site-modes" role="radiogroup" aria-label="This site">
 						{SITE_MODES.map((m) => (
 							<button key={m.id} role="radio" aria-checked={status.mode === m.id} title={m.hint} className={status.mode === m.id ? 'active' : ''} onClick={() => setSiteMode(m.id)}>
+								{m.state ? <i className={`dot state-${m.state}`} /> : <i className="dot auto" />}
 								{m.label}
 							</button>
 						))}
 					</div>
 					<div className="tools">
-						<button className="ghost" onClick={() => pick('root')}>Pick content area</button>
-						<button className="ghost" onClick={() => pick('hide')}>Hide elements</button>
+						{status.mode !== 'theme' && status.mode !== 'off' && (
+							<>
+								<button className="ghost" onClick={() => pick('root')}>Pick content area</button>
+								<button className="ghost" onClick={() => pick('hide')}>Hide elements</button>
+							</>
+						)}
 						{(status.hasCustomRoot || status.hiddenCount > 0 || status.mode !== 'auto') && (
 							<button className="ghost danger" onClick={resetSite}>Reset site</button>
 						)}
@@ -164,7 +173,7 @@ export function Popup() {
 			</section>
 
 			<footer className="foot">
-				<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> toggles reader view on any page
+				<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> switches reader, theme and off. Right-click the icon to change this site.
 			</footer>
 		</div>
 	);

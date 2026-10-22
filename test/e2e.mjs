@@ -97,12 +97,22 @@ async function open(host, p) {
 	return page;
 }
 
+// The tab's toolbar tooltip, which the background worker sets from the page's state.
+const tooltip = (page) =>
+	sw.evaluate(async (host) => {
+		for (const tab of await chrome.tabs.query({})) {
+			const status = await chrome.tabs.sendMessage(tab.id, { type: 'chl:status' }).catch(() => null);
+			if (status?.host === host) return chrome.action.getTitle({ tabId: tab.id });
+		}
+		return null;
+	}, new URL(page.url()).hostname);
+
 console.log('toolbar icon');
-for (const suffix of ['', '-off']) {
+for (const state of ['reader', 'theme', 'off', 'paused']) {
 	const ok = await sw
-		.evaluate((sfx) => chrome.action.setIcon({ path: { 16: `/icon16${sfx}.png`, 32: `/icon32${sfx}.png`, 48: `/icon48${sfx}.png` } }).then(() => true, () => false), suffix)
+		.evaluate((s) => chrome.action.setIcon({ path: { 16: `/icon16-${s}.png`, 32: `/icon32-${s}.png`, 48: `/icon48-${s}.png` } }).then(() => true, () => false), state)
 		.catch(() => false);
-	check(`${suffix ? 'muted' : 'colour'} toolbar icons load`, ok);
+	check(`${state} toolbar icons load`, ok);
 }
 
 // ── News site: grid layout, fixed header, sidebar, junk inside the article ──
@@ -136,11 +146,38 @@ console.log('news.test (typical news article)');
 	await snap(page, 'news-lightbox');
 	await page.click('#lightbox');
 
+	check('tooltip says reader view', /Reader view/.test(await tooltip(page)), await tooltip(page));
+
 	await sendToTab(page, { type: 'chl:toggle' });
-	check('shortcut toggle shows the original', (await mode(page)) === null && (await visible(page, '.sidebar')));
+	check('popup toggle shows the original', (await mode(page)) === null && (await visible(page, '.sidebar')));
 	await snap(page, 'news-original');
 	await sendToTab(page, { type: 'chl:toggle' });
-	check('shortcut toggle restores reader mode', (await mode(page)) === 'reader');
+	check('popup toggle restores reader mode', (await mode(page)) === 'reader');
+
+	let s = await sendToTab(page, { type: 'chl:cycle' });
+	check('shortcut cycles reader → theme only', s.state === 'theme' && (await mode(page)) === 'whole' && (await visible(page, '.sidebar')));
+	check('tooltip says theme only', /Theme only/.test(await tooltip(page)), await tooltip(page));
+	s = await sendToTab(page, { type: 'chl:cycle' });
+	check('shortcut cycles theme only → off', s.state === 'off' && (await mode(page)) === null);
+	s = await sendToTab(page, { type: 'chl:cycle' });
+	check('shortcut cycles off → reader', s.state === 'reader' && (await mode(page)) === 'reader');
+
+	await storage(() => chrome.storage.sync.set({ 'site:news.test': { mode: 'theme' } }));
+	await sendToTab(page, { type: 'chl:redetect' });
+	await page.waitForTimeout(300);
+	s = await sendToTab(page, { type: 'chl:status' });
+	check('"Theme" site mode restyles without reader view, even on an article', s.state === 'theme' && (await mode(page)) === 'whole' && (await visible(page, '.sidebar')));
+	await storage(() => chrome.storage.sync.remove('site:news.test'));
+	await page.waitForTimeout(300);
+
+	await setReader({ enabled: false });
+	await page.waitForTimeout(300);
+	s = await sendToTab(page, { type: 'chl:status' });
+	check('pausing everywhere reports paused', s.state === 'paused' && (await mode(page)) === null);
+	check('tooltip says paused', /Paused/.test(await tooltip(page)), await tooltip(page));
+	await setReader({ enabled: true });
+	await page.waitForTimeout(300);
+	check('resuming brings reader view back', (await mode(page)) === 'reader');
 
 	await setReader({ mode: 'dark', paletteDark: 'dracula', paletteLight: 'paper', font: 'sans', fontSize: 20, lineHeight: 1.7, width: 720, enabled: true, hideImages: false });
 	await page.waitForTimeout(300);
@@ -207,10 +244,16 @@ console.log('app.test (dashboard, not an article)');
 	check('auto mode leaves the app alone', (await mode(page)) === null);
 	const status = await sendToTab(page, { type: 'chl:status' });
 	check('status explains why', /doesn't look like an article|No readable content/.test(status.reason), status.reason);
+	check('auto with no article reports off', status.state === 'off');
+	await storage(() => chrome.storage.sync.set({ 'site:app.test': { mode: 'reader' } }));
+	await page.waitForTimeout(300);
+	check('"Reader" with no article falls back to theme only', (await mode(page)) === 'whole');
+	check('layout kept in theme-only mode', await visible(page, '.side'));
+	check('status reports theme only', (await sendToTab(page, { type: 'chl:status' })).state === 'theme');
 	await storage(() => chrome.storage.sync.set({ 'site:app.test': { mode: 'on' } }));
 	await page.waitForTimeout(300);
-	check('"Always" restyles the whole page instead', (await mode(page)) === 'whole');
-	check('layout kept in whole-page mode', await visible(page, '.side'));
+	const legacy = await sendToTab(page, { type: 'chl:status' });
+	check('old "Always" rule reads as Reader', legacy.mode === 'reader' && (await mode(page)) === 'whole', legacy.mode);
 	await storage(() => chrome.storage.sync.remove('site:app.test'));
 	await page.close();
 }

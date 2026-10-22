@@ -8,6 +8,11 @@
 	--accent: #0b7a52;
 	--accent-soft: #e2f5e5;
 	--danger: #b3402f;
+	/* The toolbar icon's colours, so the popup reads the same way. */
+	--reader: #7c3aed;
+	--theme: #3f9b4f;
+	--off: #8a8a8a;
+	--paused: #c99a00;
 	color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -20,6 +25,9 @@
 		--accent: #59c36a;
 		--accent-soft: #23382a;
 		--danger: #e48a7a;
+		--reader: #b18cf7;
+		--theme: #59c36a;
+		--paused: #f2c230;
 	}
 }
 * { box-sizing: border-box; }
@@ -50,7 +58,9 @@ button {
 .site-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .host { font-weight: 600; word-break: break-all; }
 .reason { color: var(--muted); font-size: 12px; }
-.reason.on { color: var(--accent); }
+.reason.state-reader { color: var(--reader); }
+.reason.state-theme { color: var(--theme); }
+.reason.state-paused { color: var(--paused); }
 .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: -4px; }
 
 .ghost {
@@ -67,6 +77,14 @@ button {
 .segmented { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg); border-radius: 9px; padding: 3px; gap: 3px; }
 .segmented button { border: 0; background: transparent; border-radius: 7px; padding: 6px 0; color: var(--muted); }
 .segmented button.active { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); font-weight: 600; }
+.segmented.site-modes { grid-template-columns: repeat(4, 1fr); }
+.site-modes button { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot.state-reader { background: var(--reader); }
+.dot.state-theme { background: var(--theme); }
+.dot.state-off { border: 1.5px solid var(--off); }
+/* Auto is reader or nothing, depending on the page. */
+.dot.auto { background: linear-gradient(90deg, var(--reader) 50%, transparent 50%); border: 1.5px solid var(--reader); }
 
 .palettes { display: grid; gap: 6px; transition: opacity 0.15s; }
 .palettes.dimmed { opacity: 0.55; }
