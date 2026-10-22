@@ -7,8 +7,10 @@ import {
 	loadSiteRule,
 	onSettingsChanged,
 	saveSiteRule,
+	type PageState,
 	type ReaderSettings,
 	type ReaderStatus,
+	type SiteMode,
 	type SiteRule,
 } from '@/shared/settings';
 
@@ -34,9 +36,10 @@ let settings: ReaderSettings = DEFAULT_SETTINGS;
 let rule: SiteRule = {};
 let detection: Detection | null = null;
 let applied = false;
+let state: PageState = 'off';
 let reason = 'Starting';
-/** Set by the keyboard shortcut; overrides the site mode until the next navigation. */
-let sessionOverride: 'on' | 'off' | null = null;
+/** Set by the keyboard shortcut or popup; overrides the site mode until the next navigation. */
+let sessionOverride: Exclude<SiteMode, 'auto'> | null = null;
 let lastInteraction = -Infinity;
 let lastUrl = location.href;
 let startedAt = performance.now();
@@ -48,7 +51,7 @@ export async function start(): Promise<void> {
 	rule = siteRule;
 	ensureStyle();
 	// If this site was in reader mode last time, avoid flashing the original layout.
-	if (hint[HINT_KEY] && wanted().want && document.readyState === 'loading') {
+	if (hint[HINT_KEY] && wanted() !== 'off' && document.readyState === 'loading') {
 		document.documentElement.setAttribute('data-chl-pending', '');
 		setTimeout(() => document.documentElement.removeAttribute('data-chl-pending'), PENDING_MAX_MS);
 	}
@@ -69,7 +72,13 @@ export async function start(): Promise<void> {
 				reply(status());
 				break;
 			case 'chl:toggle':
-				sessionOverride = applied ? 'off' : 'on';
+				sessionOverride = applied ? 'off' : 'reader';
+				update();
+				reply(status());
+				break;
+			case 'chl:cycle':
+				// Reader → theme only → off → reader, for this visit.
+				sessionOverride = state === 'reader' ? 'theme' : state === 'theme' ? 'off' : 'reader';
 				update();
 				reply(status());
 				break;
@@ -95,32 +104,40 @@ export async function start(): Promise<void> {
 	window.addEventListener('load', () => !applied && update(), { once: true });
 }
 
-function wanted(): { want: boolean; force: boolean } {
-	if (sessionOverride === 'off') return { want: false, force: false };
-	if (sessionOverride === 'on') return { want: true, force: true };
-	if (!settings.enabled) return { want: false, force: false };
-	const mode = rule.mode ?? 'auto';
-	return { want: mode !== 'off', force: mode === 'on' };
+/** The mode in effect: this visit's override, else the site's rule. */
+function wanted(): SiteMode {
+	if (sessionOverride) return sessionOverride;
+	if (!settings.enabled) return 'off';
+	return rule.mode ?? 'auto';
 }
 
-/** Decide whether reader mode should be on, and (re)apply or remove it. */
+/** Decide what this page should get, and (re)apply or remove it. */
 function update(): void {
 	if (picking) return;
-	const { want, force } = wanted();
-	if (!want) {
+	const mode = wanted();
+	if (mode === 'off') {
 		remove();
-		reason = sessionOverride === 'off' ? 'Turned off with the shortcut' : !settings.enabled ? 'Chromeleon is paused' : 'Off for this site';
+		state = !sessionOverride && !settings.enabled ? 'paused' : 'off';
+		reason = sessionOverride ? 'Turned off for this visit' : state === 'paused' ? 'Chromeleon is paused' : 'Off for this site';
+		report();
+		return;
+	}
+	if (mode === 'theme') {
+		detection = null;
+		applyWhole();
+		reason = sessionOverride ? 'Theme only for this visit' : 'Theme only on this site';
 		report();
 		return;
 	}
 
+	const force = mode === 'reader';
 	detection = detect();
 	if (detection && (force || detection.source === 'rule' || isReadable(detection))) {
 		applyReader(detection);
 		reason = detection.source === 'rule' ? 'Using your content area for this site' : 'Article found';
 	} else if (force) {
 		applyWhole();
-		reason = 'No article found; restyling the whole page';
+		reason = 'No article found; theme only';
 	} else {
 		remove();
 		reason = detection ? "This page doesn't look like an article" : 'No readable content found';
@@ -175,6 +192,7 @@ function applyReader(d: Detection): void {
 	setMode('reader');
 }
 
+/** Theme only: fonts and colours, the page's layout untouched. */
 function applyWhole(): void {
 	clearMarks();
 	setMode('whole');
@@ -185,6 +203,7 @@ function setMode(mode: 'reader' | 'whole'): void {
 	html.setAttribute('data-chl-on', '');
 	html.setAttribute('data-chl-mode', mode);
 	applied = true;
+	state = mode === 'reader' ? 'reader' : 'theme';
 }
 
 function remove(): void {
@@ -193,6 +212,7 @@ function remove(): void {
 	html.removeAttribute('data-chl-on');
 	html.removeAttribute('data-chl-mode');
 	applied = false;
+	state = 'off';
 }
 
 function shouldStayVisible(el: Element): boolean {
@@ -299,7 +319,7 @@ function pick(mode: 'root' | 'hide'): void {
 		startPicker({
 			prompt: 'Click the article or main content',
 			onPick: async (el) => {
-				rule = await saveSiteRule(host, { root: selectorFor(el), mode: 'on' });
+				rule = await saveSiteRule(host, { root: selectorFor(el), mode: 'reader' });
 				return false;
 			},
 			onDone: () => {
@@ -330,6 +350,7 @@ function status(): ReaderStatus {
 	return {
 		host,
 		applied,
+		state,
 		reason,
 		mode: rule.mode ?? 'auto',
 		hasCustomRoot: Boolean(rule.root),
@@ -337,12 +358,15 @@ function status(): ReaderStatus {
 	};
 }
 
-let reported: boolean | null = null;
+let reported = '';
 function report(): void {
 	document.documentElement.removeAttribute('data-chl-pending');
-	if (reported === applied) return;
-	reported = applied;
-	chrome.runtime.sendMessage({ type: 'chl:state', applied }).catch(() => {});
+	const mode = rule.mode ?? 'auto';
+	const key = `${state}|${reason}|${mode}`;
+	if (reported === key) return;
+	reported = key;
+	// The background worker sets the toolbar icon, its tooltip and the right-click menu from this.
+	chrome.runtime.sendMessage({ type: 'chl:state', state, reason, mode }).catch(() => {});
 	// Remember for next time so we can hide the page until it's restyled.
 	void chrome.storage.local.set({ [HINT_KEY]: applied });
 }

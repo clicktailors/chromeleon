@@ -6,8 +6,15 @@ import { DEFAULT_PALETTE, isPaletteFor, type ColorMode } from './palettes';
 
 export type FontId = 'serif' | 'sans' | 'system' | 'mono' | 'dyslexic';
 
-/** 'auto' applies reader mode only when the page looks like an article. */
-export type SiteMode = 'auto' | 'on' | 'off';
+/**
+ * How much Chromeleon does on a site. 'auto' applies reader mode only when the
+ * page looks like an article; 'reader' always does, restyling the whole page
+ * when there's no article; 'theme' only changes fonts and colours.
+ */
+export type SiteMode = 'auto' | 'reader' | 'theme' | 'off';
+
+/** What Chromeleon is doing to a page right now. Drives the toolbar icon. */
+export type PageState = 'reader' | 'theme' | 'off' | 'paused';
 
 /** Which palette shows: follow the OS, or pin one. */
 export type ModePreference = 'system' | ColorMode;
@@ -88,7 +95,10 @@ export async function saveSettings(patch: Partial<ReaderSettings>): Promise<Read
 
 export async function loadSiteRule(host: string): Promise<SiteRule> {
 	const res = await chrome.storage.sync.get(siteKey(host));
-	return res[siteKey(host)] ?? {};
+	const rule: Omit<SiteRule, 'mode'> & { mode?: SiteMode | 'on' } = res[siteKey(host)] ?? {};
+	// Before theme-only existed, 'on' meant "always reader".
+	if (rule.mode === 'on') rule.mode = 'reader';
+	return rule as SiteRule;
 }
 
 export async function saveSiteRule(host: string, patch: Partial<SiteRule>): Promise<SiteRule> {
@@ -112,13 +122,15 @@ export function onSettingsChanged(host: string, cb: () => void): void {
 export type ReaderMessage =
 	| { type: 'chl:status' }
 	| { type: 'chl:toggle' }
+	| { type: 'chl:cycle' }
 	| { type: 'chl:pick'; mode: 'root' | 'hide' }
 	| { type: 'chl:redetect' };
 
 export interface ReaderStatus {
 	host: string;
 	applied: boolean;
-	/** Why reader mode is or isn't applied, for display in the popup. */
+	state: PageState;
+	/** Why the page is styled the way it is, for display in the popup and icon tooltip. */
 	reason: string;
 	mode: SiteMode;
 	hasCustomRoot: boolean;

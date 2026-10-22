@@ -5,7 +5,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build outputs
-dist/
+# dist/ is committed so the extension can be loaded unpacked straight from a
+# pull; rebuild it (npm run build) in any change that touches src/ or public/.
 build/
 *.tsbuildinfo
 

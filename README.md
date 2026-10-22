@@ -15,17 +15,17 @@ Chromeleon v2 leaves every element where it is:
 3. **Inject one stylesheet** (`src/engine/styles.ts`), scoped entirely under `html[data-chl-on]`. It flattens the ancestors' layout, hides the rest, and applies your font, size, width and colours to the article. Turning reader mode off just removes the attribute.
 4. **Keep up with the page** (`src/engine/engine.ts`): re-detect on single-page-app navigation or when the article is re-rendered, keep looking for content that loads late, hide ads and cookie banners that appear later, and let through popups you open yourself (like an image lightbox).
 
-Pages that aren't articles (web apps, homepages) are left alone in **Auto** mode. Set a site to **Always** to restyle it anyway.
+Pages that aren't articles (web apps, homepages) are left alone in **Auto** mode. Set a site to **Theme** to change just its fonts and colours, or to **Reader** to force reader view (it falls back to theme only where there's no article).
 
 ## Features
 
 - Naamia's theme engine: choose System, Light or Dark, and pick one palette for each mode (Sepia by day, Dracula by night). There are 40 palettes: five built for reading, Naamia's Default, Retro and Nautical, and 32 daisyUI themes. Every text colour is pushed to at least 4.5:1 contrast, and `npm run check:palettes` fails if one drops below.
 - Five font choices, and sliders for size, line spacing and column width. Changes apply live.
-- Per-site mode: Auto, Always or Never.
+- Per-site mode: Auto, Reader, Theme (fonts and colours, layout untouched) or Off. Change it in the popup, or right-click the toolbar icon.
 - **Pick content area**: click the right element when detection gets a site wrong. It's saved per site.
 - **Hide elements**: click anything to hide it on that site from then on.
-- `Alt+Shift+R` toggles between reader view and the original page.
-- The toolbar chameleon is muted until reader view takes over a page, then turns green.
+- `Alt+Shift+R` cycles the current page through reader view, theme only and off, until you leave it.
+- The toolbar chameleon shows what it's doing: purple for reader view, green for theme only, a hollow grey outline when it's off, and yellow when paused everywhere. Hover it for the reason.
 - The original layout doesn't flash on sites that were in reader view last time.
 
 ## Develop
@@ -63,6 +63,6 @@ test/
 ## Known gaps
 
 - Detection is heuristic. Use **Pick content area** for sites it gets wrong; that choice sticks.
-- "Always" mode on non-article pages only changes fonts (light themes) or uses an invert filter (dark themes); it doesn't fully re-theme complex apps.
+- Theme only only changes fonts (light themes) or uses an invert filter (dark themes); it doesn't fully re-theme complex apps.
 - Content inside iframes (some embeds) isn't restyled.
 - Only tested against local fixtures so far, not a sweep of real sites.
