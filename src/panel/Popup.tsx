@@ -89,7 +89,7 @@ export function Popup() {
 	return (
 		<div className="popup">
 			<header className="top">
-				<img src="/icon48.png" alt="" width={22} height={22} />
+				<img src={status?.applied ? '/icon48.png' : '/icon48-off.png'} alt="" width={24} height={24} />
 				<h1>Chromeleon</h1>
 				<label className="switch" title={settings.enabled ? 'Pause everywhere' : 'Resume'}>
 					<input type="checkbox" checked={settings.enabled} onChange={(e) => patch({ enabled: e.target.checked })} />

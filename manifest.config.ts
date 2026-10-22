@@ -7,6 +7,14 @@ const icons = {
 	128: 'icon128.png',
 };
 
+// The toolbar chameleon starts muted and takes on its colour on pages where
+// reader view is running (see engine/background.ts).
+const offIcons = {
+	16: 'icon16-off.png',
+	32: 'icon32-off.png',
+	48: 'icon48-off.png',
+};
+
 export default defineManifest({
 	manifest_version: 3,
 	name: 'Chromeleon',
@@ -17,7 +25,7 @@ export default defineManifest({
 	action: {
 		default_popup: 'src/panel/popup.html',
 		default_title: 'Chromeleon',
-		default_icon: icons,
+		default_icon: offIcons,
 	},
 	commands: {
 		'toggle-reader': {
